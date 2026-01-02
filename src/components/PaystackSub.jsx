@@ -42,10 +42,26 @@ const PaystackSub = ({ email, amount, currency, onSuccess, onClose }) => {
 
         try {
             initializePayment(
-                (reference) => {
+                async (reference) => {
                     console.log("Paystack Success Reference:", reference);
-                    setPro(true);
-                    if (onSuccess) onSuccess(reference);
+                    try {
+                        const response = await fetch('/api/verify-payment', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ reference: reference.reference })
+                        });
+                        const data = await response.json();
+
+                        if (data.status === 'success' && data.verified) {
+                            setPro(true);
+                            if (onSuccess) onSuccess(reference);
+                        } else {
+                            alert("Verification Failed: " + (data.message || "Invalid transaction"));
+                        }
+                    } catch (error) {
+                        console.error("Verification Error:", error);
+                        alert("Verification failed due to network error.");
+                    }
                 },
                 () => {
                     console.log("Paystack Modal Closed");
