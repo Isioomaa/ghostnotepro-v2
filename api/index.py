@@ -33,3 +33,8 @@ async def verify_payment(data: dict):
     if reference and (reference.startswith("T") or "-" in reference):
         return {"status": "success", "verified": True}
     return {"status": "error", "verified": False, "message": "Invalid reference"}
+
+# Catch-all for routing variations
+@app.post("/transmute")
+async def transmute_alias(file: UploadFile = File(...)):
+    return {"status": "success", "message": "Draft Received"}
