@@ -24,7 +24,7 @@ model = genai.GenerativeModel('gemini-1.5-flash')
 
 @app.get("/api/ping")
 def ping():
-    return {"status": "pong", "message": "Server is online (Vercel Patch)"}
+    return {"status": "pong", "message": "Server is online (Vercel Flash Optimized)"}
 
 @app.post("/api/transmute")
 @app.post("/transmute")
