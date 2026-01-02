@@ -27,24 +27,37 @@ def ping():
     return {"status": "pong", "message": "Server is online (Vercel Patch)"}
 
 @app.post("/api/transmute")
-async def transmute(file: UploadFile = File(...)):
+@app.post("/transmute")
+async def transmute_handler(file: UploadFile = File(...)):
+    print("--- 1. Received Transmute Request ---")
+    tmp_path = None
     try:
+        # VERCEL FIX: Use tempfile.NamedTemporaryFile
         with tempfile.NamedTemporaryFile(delete=False, suffix=".webm") as tmp:
             content = await file.read()
             tmp.write(content)
             tmp_path = tmp.name
         
+        print(f"--- 2. Saved to Temp: {tmp_path} ---")
+
+        # Send to Gemini
         myfile = genai.upload_file(tmp_path)
+        print("--- 3. Uploaded to Gemini ---")
         
-        result = model.generate_content([
-            myfile, 
-            "Transcribe this audio. Return ONLY the text, no conversational filler or markdown."
-        ])
+        prompt = "Transcribe this audio accurately. Then, refine it into a strategic executive summary. Do not use markdown bolding."
+        result = model.generate_content([myfile, prompt])
+        print("--- 4. Generated Text ---")
         
+        # CLEANUP
         os.remove(tmp_path)
+        
         return {"status": "success", "text": result.text}
+
     except Exception as e:
-        return {"status": "error", "message": str(e)}
+        print(f"❌ ERROR: {str(e)}")
+        if tmp_path and os.path.exists(tmp_path):
+            os.remove(tmp_path)
+        return {"status": "error", "message": f"Processing failed: {str(e)}"}
 
 @app.post("/api/generate-post")
 async def generate_post(data: dict):
@@ -85,7 +98,6 @@ async def generate_post(data: dict):
         """
         
         response = model.generate_content(prompt)
-        # We return the raw text, the frontend's cleanAndParseJSON will handle it
         return response.text
     except Exception as e:
         return {"status": "error", "message": str(e)}
@@ -96,7 +108,3 @@ async def verify_payment(data: dict):
     if reference and (reference.startswith("T") or "-" in reference):
         return {"status": "success", "verified": True}
     return {"status": "error", "verified": False, "message": "Invalid reference"}
-
-@app.post("/transmute")
-async def transmute_alias(file: UploadFile = File(...)):
-    return await transmute(file)
