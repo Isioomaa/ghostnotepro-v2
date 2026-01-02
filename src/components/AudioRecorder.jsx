@@ -359,21 +359,30 @@ const AudioRecorder = ({ onUploadSuccess, t, languageName, isPro }) => {
                     </motion.button>
 
                     <motion.button
-                        onClick={async () => {
+                        onClick={() => {
                             const audioData = audioBlob || file;
                             if (!audioData) return;
-                            setSavingDraft(true);
+
+                            const newDraft = {
+                                id: Date.now(),
+                                title: file ? file.name : `Voice Note ${new Date().toLocaleTimeString()}`,
+                                transcript: "Audio recording saved as draft. Transmute to see insights.",
+                                tag: "💭 Brain Dump",
+                                created_at: new Date().toISOString()
+                            };
+
                             try {
-                                await saveDraft(audioData, languageName);
+                                const existing = JSON.parse(localStorage.getItem('ghostnote_drafts') || '[]');
+                                const updated = [newDraft, ...existing];
+                                localStorage.setItem('ghostnote_drafts', JSON.stringify(updated));
+
                                 setAudioBlob(null);
                                 setFile(null);
                                 setRecordingTime(0);
                                 alert('Saved to Drafts! 💭');
                             } catch (err) {
                                 console.error(err);
-                                setError('Failed to stash draft.');
-                            } finally {
-                                setSavingDraft(false);
+                                setError('Failed to save draft locally.');
                             }
                         }}
                         disabled={loading || savingDraft}

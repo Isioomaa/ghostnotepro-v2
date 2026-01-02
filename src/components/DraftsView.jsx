@@ -12,12 +12,12 @@ const DraftsView = ({ onClose }) => {
         fetchDrafts();
     }, []);
 
-    const fetchDrafts = async () => {
+    const fetchDrafts = () => {
         try {
-            const response = await axios.get(`${API_BASE_URL}/drafts`);
-            setDrafts(response.data);
+            const localDrafts = JSON.parse(localStorage.getItem('ghostnote_drafts') || '[]');
+            setDrafts(localDrafts);
         } catch (err) {
-            console.error('Failed to fetch drafts:', err);
+            console.error('Failed to fetch local drafts:', err);
         } finally {
             setLoading(false);
         }
