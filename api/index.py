@@ -60,7 +60,7 @@ async def transmute_handler(file: UploadFile = File(...)):
         
         # 4. GENERATE (Requirement 3, 5: Send to Gemini 1.5 Flash via inline_data)
         response = client.models.generate_content(
-            model="gemini-1.5-flash",
+            model="gemini-2.5-flash-native-audio-dialog",
             contents=[
                 types.Part.from_bytes(data=audio_bytes, mime_type=mime_type),
                 prompt
