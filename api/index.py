@@ -1,5 +1,6 @@
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 from google import genai
 from google.genai import types
 import os
@@ -11,6 +12,10 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = FastAPI()
+
+class GenerateRequest(BaseModel):
+    text: str
+    tone: str = "Professional"
 
 # CORS setup
 app.add_middleware(
@@ -80,4 +85,33 @@ async def transmute_handler(file: UploadFile = File(...)):
 
     except Exception as e:
         logger.error(f"❌ ERROR: {str(e)}")
+        return {"status": "error", "message": str(e)}
+
+@app.post("/api/generate-post")
+async def generate_post_handler(request: GenerateRequest):
+    try:
+        logger.info(f"--- Generating Suite for Tone: {request.tone} ---")
+        
+        prompt = f"""
+        You are a high-level executive ghostwriter. 
+        Context: {request.text}
+        Tone: {request.tone}
+        
+        Task: Convert this transcript into a "Strategic Executive Suite" containing:
+        1. A punchy LinkedIn Post (max 200 words).
+        2. A Twitter/X Thread (3 tweets).
+        3. A brief internal memo.
+        
+        Format the output clearly.
+        """
+
+        response = client.models.generate_content(
+            model="gemini-1.5-flash",
+            contents=prompt
+        )
+        
+        return {"status": "success", "data": response.text}
+
+    except Exception as e:
+        logger.error(f"❌ Generation Error: {str(e)}")
         return {"status": "error", "message": str(e)}
