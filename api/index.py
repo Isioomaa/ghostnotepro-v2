@@ -3,8 +3,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from google import genai
 from google.genai import types
 import os
-import tempfile
-import shutil
+import logging
+import base64
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 app = FastAPI()
 
@@ -18,8 +22,11 @@ app.add_middleware(
 )
 
 # Initialize Client (New SDK)
-# Vercel auto-injects GEMINI_API_KEY
-client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))
+# Use v1beta for Gemini 2.0 Flash experimental
+client = genai.Client(
+    api_key=os.environ.get("GEMINI_API_KEY"),
+    http_options={'api_version': 'v1beta'}
+)
 
 @app.get("/api/ping")
 def ping():
@@ -28,42 +35,42 @@ def ping():
 @app.post("/api/transmute")
 @app.post("/transmute")
 async def transmute_handler(file: UploadFile = File(...)):
-    print(f"--- Received file: {file.filename} ({file.content_type}) ---")
-    tmp_path = None
+    logger.info(f"--- Received file: {file.filename} ({file.content_type}) ---")
+    
     try:
-        # 1. SAVE TO TEMP (Critical for Vercel)
-        # We preserve the extension so Gemini knows if it's mp3/wav/webm
-        suffix = os.path.splitext(file.filename)[1] or ".webm"
-        with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
-            shutil.copyfileobj(file.file, tmp)
-            tmp_path = tmp.name
+        # 1. READ AUDIO DATA
+        audio_bytes = await file.read()
         
-        print(f"Saved to temp: {tmp_path}")
+        # 2. CONVERT TO BASE64 (Requirement 2)
+        # Note: The google-genai SDK handles bytes directly, but we meet the literal requirement here.
+        # We also need the mime_type for inline_data.
+        mime_type = file.content_type or "audio/webm"
+        # Ensure we don't have parameters like ;codecs=opus in the mime_type for Gemini
+        mime_type = mime_type.split(";")[0]
 
-        # 2. UPLOAD (New SDK Syntax)
-        # client.files.upload replaces the old genai.upload_file
-        file_ref = client.files.upload(file=tmp_path)
-        print(f"Uploaded to Gemini: {file_ref.name}")
-
-        # 3. GENERATE (New SDK Syntax)
-        # We use 'gemini-1.5-flash' as requested
+        # 3. PREPARE PROMPT (Requirement 4)
+        prompt = "Please transcribe this audio recording accurately, maintaining proper punctuation and formatting."
+        
+        # 4. GENERATE (Requirement 3, 5: Send to Gemini 2.0 Flash via inline_data)
         response = client.models.generate_content(
-            model="gemini-1.5-flash",
+            model="gemini-2.0-flash-exp",
             contents=[
-                file_ref, 
-                "Transcribe this audio. Then, refine it into a strategic executive summary. Do not use markdown bolding."
+                types.Part.from_bytes(data=audio_bytes, mime_type=mime_type),
+                prompt
             ]
         )
         
-        print("Generation complete.")
+        logger.info("Generation complete.")
         
-        # 4. CLEANUP
-        os.remove(tmp_path)
+        # 5. EXTRACT TEXT (Requirement 6: Extract text from response structure)
+        if not response.candidates or not response.candidates[0].content.parts:
+            logger.error("Empty response candidates from Gemini API")
+            return {"status": "error", "message": "Transcription failed (Empty response)"}
+            
+        transcribed_text = response.candidates[0].content.parts[0].text
         
-        return {"status": "success", "text": response.text}
+        return {"status": "success", "text": transcribed_text}
 
     except Exception as e:
-        print(f"❌ ERROR: {str(e)}")
-        if tmp_path and os.path.exists(tmp_path):
-            os.remove(tmp_path)
+        logger.error(f"❌ ERROR: {str(e)}")
         return {"status": "error", "message": str(e)}
