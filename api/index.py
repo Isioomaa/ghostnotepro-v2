@@ -32,6 +32,15 @@ client = genai.Client(
 def ping():
     return {"status": "pong"}
 
+@app.get("/api/list-models")
+def list_models():
+    try:
+        models = client.models.list()
+        model_names = [model.name for model in models]
+        return {"status": "success", "models": model_names}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
 @app.post("/api/transmute")
 @app.post("/transmute")
 async def transmute_handler(file: UploadFile = File(...)):
