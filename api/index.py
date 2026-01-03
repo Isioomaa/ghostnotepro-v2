@@ -22,10 +22,8 @@ app.add_middleware(
 )
 
 # Initialize Client (New SDK)
-# Use v1beta for Gemini 2.0 Flash experimental
 client = genai.Client(
-    api_key=os.environ.get("GEMINI_API_KEY"),
-    http_options={'api_version': 'v1beta'}
+    api_key=os.environ.get("GEMINI_API_KEY")
 )
 
 @app.get("/api/ping")
@@ -62,7 +60,7 @@ async def transmute_handler(file: UploadFile = File(...)):
         
         # 4. GENERATE (Requirement 3, 5: Send to Gemini 1.5 Flash via inline_data)
         response = client.models.generate_content(
-            model="models/gemini-1.5-flash",
+            model="gemini-1.5-flash-latest",
             contents=[
                 types.Part.from_bytes(data=audio_bytes, mime_type=mime_type),
                 prompt
