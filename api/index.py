@@ -51,9 +51,9 @@ async def transmute_handler(file: UploadFile = File(...)):
         # 3. PREPARE PROMPT (Requirement 4)
         prompt = "Please transcribe this audio recording accurately, maintaining proper punctuation and formatting."
         
-        # 4. GENERATE (Requirement 3, 5: Send to Gemini 2.0 Flash via inline_data)
+        # 4. GENERATE (Requirement 3, 5: Send to Gemini 1.5 Flash via inline_data)
         response = client.models.generate_content(
-            model="gemini-2.0-flash-exp",
+            model="gemini-1.5-flash",
             contents=[
                 types.Part.from_bytes(data=audio_bytes, mime_type=mime_type),
                 prompt
