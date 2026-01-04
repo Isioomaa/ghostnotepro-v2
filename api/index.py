@@ -6,6 +6,9 @@ import os
 import tempfile
 import shutil
 import logging
+import json
+import re
+from typing import Literal
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -25,10 +28,11 @@ app.add_middleware(
 # Initialize Client (Gemini 2.5 Flash)
 client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))
 
-# Data Model for The Strategist
+# Data Model for Post Generation
 class GenerateRequest(BaseModel):
     text: str
-    tone: str = "Professional"
+    mode: Literal["scribe", "strategist"]
+    isPro: bool = False
 
 @app.get("/api/ping")
 def ping():
@@ -70,39 +74,74 @@ async def transmute_handler(file: UploadFile = File(...)):
             os.remove(tmp_path)
         return {"status": "error", "message": str(e)}
 
-# --- STEP 2: THE STRATEGIST (Core Thesis -> Executive Suite) ---
+def clean_and_parse_json(text: str):
+    """Robust helper to extract JSON from Gemini's response."""
+    try:
+        # Remove markdown code blocks if present
+        json_str = re.sub(r'```json\s?|\s?```', '', text).strip()
+        return json.loads(json_str)
+    except Exception as e:
+        logger.error(f"JSON Parsing Error: {str(e)} | Raw: {text}")
+        # Fallback: attempt to find anything between braces
+        try:
+            match = re.search(r'\{.*\}', text, re.DOTALL)
+            if match:
+                return json.loads(match.group())
+        except:
+            pass
+        raise ValueError("Could not parse JSON from Gemini response")
+
+# --- STEP 2: POST GENERATION (Transcribed Text -> Formatted Content) ---
 @app.post("/api/generate-post")
 async def generate_post_handler(request: GenerateRequest):
     try:
-        logger.info(f"Strategist activated. Tone: {request.tone}")
+        logger.info(f"Generation activated. Mode: {request.mode} | isPro: {request.isPro}")
         
-        prompt = f'''
-        You are The Strategist.
-        
-        INPUT CONTEXT (The Scribe's Output):
-        "{request.text}"
-        
-        TONE: {request.tone}
-        
-        TASK:
-        Apply executive reasoning to operationalize this thinking.
-        Generate a "Strategic Executive Suite" with these 3 distinct sections:
-        
-        1. LINKEDIN POST (Viral, punchy, max 200 words)
-        2. TWITTER/X THREAD (3-5 high-impact tweets)
-        3. INTERNAL MEMO (Formal, actionable, clear next steps)
-        
-        Format the output clearly.
-        '''
+        if request.mode == "strategist" and not request.isPro:
+            raise HTTPException(status_code=403, detail="Strategist mode requires a Pro subscription.")
 
-        # Generate with Gemini 2.5 Flash
+        if request.mode == "scribe":
+            prompt = f"""
+            Format this transcription into a Wall Street Journal style article with:
+            1) Core Thesis (main argument)
+            2) Pillars (3-5 supporting points)
+            3) Steps (actionable items)
+
+            Text: {request.text}
+
+            Return ONLY a valid JSON object with keys: "thesis", "pillars" (list of strings), "steps" (list of strings).
+            Do not include any conversational text or markdown bolding.
+            """
+        else: # strategist
+            prompt = f"""
+            Analyze this from an executive perspective and provide:
+            1) Judgment (strategic assessment)
+            2) Risk Audit (potential risks and mitigations)
+            3) Email Draft (professional executive summary)
+
+            Text: {request.text}
+
+            Return ONLY a valid JSON object with keys: "judgment", "riskAudit", "emailDraft".
+            Do not include any conversational text or markdown bolding.
+            """
+
+        # Generate with Gemini
         response = client.models.generate_content(
             model="gemini-2.5-flash",
             contents=prompt
         )
         
-        return {"status": "success", "data": response.text}
+        # Parse result
+        parsed_content = clean_and_parse_json(response.text)
+        
+        return {
+            "status": "success", 
+            "mode": request.mode,
+            "content": parsed_content
+        }
 
+    except HTTPException as e:
+        raise e
     except Exception as e:
-        logger.error(f"Strategist Error: {str(e)}")
+        logger.error(f"Generation Error: {str(e)}")
         return {"status": "error", "message": str(e)}
