@@ -1,10 +1,8 @@
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from google import genai
+from google.genai import types
 import os
-import tempfile
-import shutil
 import logging
 import json
 import re
@@ -42,36 +40,27 @@ def ping():
 @app.post("/api/transmute")
 @app.post("/transmute")
 async def transmute_handler(file: UploadFile = File(...)):
-    tmp_path = None
     try:
         logger.info(f"Scribe receiving audio: {file.filename}")
         
-        # Save to /tmp (Vercel Requirement)
-        suffix = os.path.splitext(file.filename)[1] or ".webm"
-        with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
-            shutil.copyfileobj(file.file, tmp)
-            tmp_path = tmp.name
-        
-        # Upload
-        file_ref = client.files.upload(file=tmp_path)
-        
-        # Generate 'The Scribe' Output
-        # We ask specifically for a "Core Thesis" structure as shown in the design
+        # 1. READ AUDIO DATA (In-memory, bypasses read-only filesystem issues)
+        audio_bytes = await file.read()
+        mime_type = file.content_type or "audio/webm"
+        mime_type = mime_type.split(";")[0]
+
+        # 2. GENERATE (Inline approach - NO FILE UPLOAD)
         response = client.models.generate_content(
             model="gemini-2.5-flash",
             contents=[
-                file_ref, 
+                types.Part.from_bytes(data=audio_bytes, mime_type=mime_type),
                 "You are The Scribe. Transcribe this audio accurately. Then, refine it into a clear, articulate 'Core Thesis'. Do not use bolding."
             ]
         )
         
-        os.remove(tmp_path)
         return {"status": "success", "text": response.text}
 
     except Exception as e:
         logger.error(f"Scribe Error: {str(e)}")
-        if tmp_path and os.path.exists(tmp_path):
-            os.remove(tmp_path)
         return {"status": "error", "message": str(e)}
 
 def clean_and_parse_json(text: str):
