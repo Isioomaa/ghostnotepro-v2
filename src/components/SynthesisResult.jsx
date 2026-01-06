@@ -45,9 +45,21 @@ const SynthesisResult = ({ text, analysis, languageName, onReset, isPro, onShowT
         setLoading(true);
         setError(null);
         try {
-            const result = await generateExecutiveSuite(text, analysis, languageName);
-            setData(result.data);
-            setSessionId(result.session_id);
+            const result = await generateExecutiveSuite(text, analysis, languageName, false, 'scribe', isPro);
+            // Result is now the content object (core_thesis etc.)
+            // We might need to wrap it to match existing `data` structure which seemed to expect keys directly?
+            // The previous code expected `setData(result.data)` but result IS the data now.
+            // Wait, previous code: `setData(result.data); setSessionId(result.session_id);`
+            // My gemini.js returns `data.content`. It does NOT return session_id currently.
+            // API doesn't return session_id.
+
+            // Merge into existing structure. 
+            // If data is null, we set it. If data exists, we might merge? 
+            // For now, let's just set it. Struct: { core_thesis: ..., strategic_pillars: ... } matches `free_tier` expectation?
+            // SynthesisResult `getTabContent` checks `data.free_tier` OR `data.core_thesis`.
+            // So returning direct object is fine.
+            setData(result);
+            // setSessionId(result.session_id); // API doesn't support this yet, ignore.
         } catch (err) {
             console.error(err);
             setError("The transmuter encountered an error. Please try again.");

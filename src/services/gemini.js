@@ -48,23 +48,44 @@ export const transmuteAudio = async (audioBlob, language) => {
     }
 };
 
-export const generateExecutiveSuite = async (text, analysis, language, variation = false) => {
-    // Mocking the generation for now to bypass backend DB issues
-    // In a real Vercel app, this would still call the backend, but the backend would not use a DB
+export const generateExecutiveSuite = async (text, analysis, language, variation = false, mode = 'scribe', isPro = false) => {
+    // Note: analysis, language, variation might be unused in backend but keeping signature compatible if needed, 
+    // or we can clean up. The backend only uses `text`, `mode`, `isPro`.
+
     try {
-        const response = await axios.post(`${API_BASE_URL}/generate-post`, {
-            text,
-            analysis,
-            language,
-            variation
+        const response = await fetch(`${API_BASE_URL}/generate-post`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                text,
+                mode,
+                isPro
+            })
         });
 
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Generation failed: ${response.status} ${errorText}`);
+        }
+
+        const data = await response.json();
+
         // Apply robust parsing in case the backend returns a string or has raw fluff
-        const processedData = cleanAndParseJSON(response.data);
-        return processedData;
+        // The backend now returns { status: "success", mode: "...", content: {...} }
+        // We need to return the 'content' part, or merged data?
+        // The previous code returned `processedData`.
+
+        if (data.status === 'success' && data.content) {
+            return data.content;
+        } else {
+            // Fallback if structure is different
+            return cleanAndParseJSON(data);
+        }
+
     } catch (error) {
         console.error("Generation error:", error);
-        // Fallback or rethrow
         throw error;
     }
 };

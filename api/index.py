@@ -94,12 +94,16 @@ async def generate_post_handler(request: GenerateRequest):
             prompt = f"""
             Format this transcription into a Wall Street Journal style article with:
             1) Core Thesis (main argument)
-            2) Pillars (3-5 supporting points)
+            2) Pillars (3-5 supporting points, each with a title and description)
             3) Steps (actionable items)
 
             Text: {request.text}
 
-            Return ONLY a valid JSON object with keys: "thesis", "pillars" (list of strings), "steps" (list of strings).
+            Return ONLY a valid JSON object with keys: 
+            - "core_thesis": string
+            - "strategic_pillars": list of objects with "title" (string) and "description" (string)
+            - "tactical_steps": list of strings
+
             Do not include any conversational text or markdown bolding.
             """
         else: # strategist
@@ -108,10 +112,16 @@ async def generate_post_handler(request: GenerateRequest):
             1) Judgment (strategic assessment)
             2) Risk Audit (potential risks and mitigations)
             3) Email Draft (professional executive summary)
+            4) Action Plan (30-day roadmap)
 
             Text: {request.text}
 
-            Return ONLY a valid JSON object with keys: "judgment", "riskAudit", "emailDraft".
+            Return ONLY a valid JSON object with keys: 
+            - "executive_judgement": string
+            - "risk_audit": string
+            - "email_draft": object with "subject" (string) and "body" (string)
+            - "action_plan": list of strings (roadmap items)
+
             Do not include any conversational text or markdown bolding.
             """
 
