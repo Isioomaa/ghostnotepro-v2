@@ -526,6 +526,38 @@ const SynthesisResult = ({ text, analysis, languageName, onReset, isPro, onShowT
                 </div>
             </div>
 
+            {/* Museum Mode: Archive Action */}
+            {data && (
+                <div className="flex justify-center mb-12">
+                    <motion.button
+                        onClick={() => {
+                            const id = `cos_${Date.now().toString(36)}_${Math.random().toString(36).substr(2, 5)}`;
+                            const archiveData = {
+                                id,
+                                timestamp: Date.now(),
+                                content: data.free_tier || data.pro_tier || data, // Robustly pick content
+                                analysis: { audit: analysis }, // Persist analysis
+                                mode: activeTab
+                            };
+
+                            try {
+                                localStorage.setItem(`archive:${id}`, JSON.stringify(archiveData));
+                                const url = `${window.location.origin}/s/${id}`;
+                                navigator.clipboard.writeText(url);
+                                onShowToast("Strategic brief archived. Link copied.");
+                            } catch (err) {
+                                console.error("Archive failed", err);
+                                onShowToast("Failed to archive.");
+                            }
+                        }}
+                        className="bg-black text-white border border-gray-800 px-8 py-4 font-sans text-xs font-bold uppercase tracking-[0.2em] hover:bg-tactical-amber hover:text-black hover:border-tactical-amber transition-all shadow-lg"
+                        whileTap={{ scale: 0.98 }}
+                    >
+                        Archive & Share Brief
+                    </motion.button>
+                </div>
+            )}
+
             {/* Share Actions */}
             <ShareActions
                 sessionId={sessionId}

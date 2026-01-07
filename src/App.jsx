@@ -235,6 +235,8 @@ function MainApp() {
   );
 }
 
+import StrategicBriefView from './components/StrategicBriefView';
+
 function App() {
   return (
     <HelmetProvider>
@@ -242,6 +244,7 @@ function App() {
         <Routes>
           <Route path="/" element={<MainApp />} />
           <Route path="/p/:slug" element={<PublicReadView />} />
+          <Route path="/s/:id" element={<StrategicBriefView />} />
         </Routes>
       </Router>
     </HelmetProvider>
