@@ -171,10 +171,69 @@ const AudioRecorder = ({ onUploadSuccess, t, languageName, isPro }) => {
         setLoading(true);
 
         try {
-            const text = await transmuteAudio(audioData, languageName);
+
+            // response is now { status: "success", data: { transcription, core_thesis, strategic_pillars, executive_state } }
+            const response = await transmuteAudio(audioData, languageName);
+
+            // Handle both legacy (string) and new (JSON) formats
+            let textValue = "";
+            let analysisData = null;
+
+            if (response.data && response.data.core_thesis) {
+                // New JSON format
+                const { transcription, executive_state, core_thesis, strategic_pillars } = response.data;
+
+                // For Scribe view compatibility, we combine thesis + pillars for the "text" prop if needed,
+                // BUT SynthesisResult now handles structured data if passed.
+                // Re-using the passed text prop heavily might break things if it expects a string.
+                // SynthesisResult expects `text` which is displayed as "Transcription".
+                // We should pass the actual transcription as `text`.
+                // And pass the rest as `analysis` or a new prop.
+                // However, App.jsx uses `text` for `transcription` state.
+                textValue = transcription || "";
+
+                // Calculate Emphasis Audit
+                // WPM = Word Count / (Duration in Minutes)
+                // Duration is recordingTime (seconds). If upload, we might not have it easily, assume avg or 0.
+                const durationSeconds = recordingTime || 60; // Fallback if 0 (upload mode)
+                const wordCount = textValue.trim().split(/\s+/).length;
+                const wpm = Math.round(wordCount / (durationSeconds / 60));
+
+                let intensity = "Medium";
+                if (wpm < 100) intensity = "Low";
+                if (wpm > 150) intensity = "High";
+
+                const mins = Math.floor(durationSeconds / 60);
+                const secs = durationSeconds % 60;
+                const formattedDuration = `${mins}m ${secs}s`;
+
+                analysisData = {
+                    audit: {
+                        duration: formattedDuration,
+                        wpm: wpm,
+                        intensity: intensity,
+                        executive_state: executive_state || "Reflective"
+                    },
+                    // Pass the Scribe structured data too so we don't need to re-generate it?
+                    // SynthesisResult currently calls generation separately.
+                    // If we have it here, we could potentially pass it to pre-fill?
+                    // For now, let's just pass the audit.
+                    content: {
+                        core_thesis: response.data.core_thesis,
+                        strategic_pillars: response.data.strategic_pillars
+                    }
+                };
+            } else if (typeof response === 'string') {
+                // Legacy fallback
+                textValue = response;
+            } else if (response.text) {
+                // Legacy dict fallback
+                textValue = response.text;
+            }
+
             // Increment usage count AFTER successful generation
             incrementUsageCount();
-            onUploadSuccess(text, selectedPlatforms);
+            onUploadSuccess(textValue, selectedPlatforms, analysisData);
         } catch (err) {
             console.error(err);
             setError(err.message || 'Transcription failed.');

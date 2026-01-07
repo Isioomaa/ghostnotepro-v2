@@ -41,7 +41,7 @@ export const transmuteAudio = async (audioBlob, language) => {
                 'Content-Type': 'multipart/form-data',
             },
         });
-        return response.data.text;
+        return response.data;
     } catch (error) {
         console.error("Transmutation error:", error);
         throw error;

@@ -37,20 +37,36 @@ function MainApp() {
 
   const t = TRANSLATIONS[currentLang] || TRANSLATIONS.EN;
 
-  const handleUploadSuccess = async (text) => {
+  const handleUploadSuccess = async (text, platforms, analysisData) => {
     if (!text) return;
     setTranscription(text);
+
+    // Store content if provided separately (for Scribe view)
+    if (analysisData && analysisData.content) {
+      // We might want to pass this to SynthesisResult too?
+      // SynthesisResult takes `text`. If we pass object, it expects keys.
+      // For now, let's keep `transcription` as text for display.
+      // And pass analysisData.audit as analysis.
+    }
+
     try {
-      const analysisResult = analyzeText(text);
-      setAnalysis(analysisResult || {
-        word_count: 0,
-        tone: "Neutral",
-        emotion: "calm",
-        virality_score: 0,
-        suggestions: []
-      });
+      if (analysisData && analysisData.audit) {
+        // Use the backend-provided Emphasis Audit
+        setAnalysis(analysisData.audit);
+      } else {
+        // Fallback to local analysis (Legacy)
+        const analysisResult = analyzeText(text);
+        setAnalysis(analysisResult || {
+          word_count: 0,
+          tone: "Neutral",
+          emotion: "calm",
+          virality_score: 0,
+          suggestions: []
+        });
+      }
     } catch (err) {
       console.error("Analysis failed", err);
+      // Fallback
       setAnalysis({
         word_count: 0,
         tone: "Neutral",

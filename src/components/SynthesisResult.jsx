@@ -97,12 +97,31 @@ const SynthesisResult = ({ text, analysis, languageName, onReset, isPro, onShowT
                     <p className="text-[#F9F7F5] leading-relaxed max-w-lg mx-auto whitespace-pre-wrap">{text}</p>
                 </div>
 
-                {/* Analysis */}
+                {/* Analysis / Emphasis Audit */}
                 {analysis && (
-                    <div className="flex justify-center space-x-16">
-                        <div className="text-center">
-                            <p className="text-[#999] text-xs uppercase tracking-widest mb-2">Tone</p>
-                            <p className="font-serif text-xl text-[#F9F7F5]">{analysis.tone}</p>
+                    <div className="w-full max-w-2xl mx-auto mb-8 border border-white/10 bg-white/5 rounded-lg p-6">
+                        <div className="flex items-center space-x-2 mb-4 border-b border-white/5 pb-2">
+                            <span className="w-2 h-2 bg-tactical-amber rounded-full animate-pulse"></span>
+                            <h5 className="font-sans font-bold uppercase tracking-[0.2em] text-xs text-tactical-amber">Emphasis Audit</h5>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-center divide-y md:divide-y-0 md:divide-x divide-white/10">
+                            <div className="pt-2 md:pt-0">
+                                <p className="text-[10px] uppercase tracking-widest text-gray-500 mb-1">Duration</p>
+                                <p className="font-mono text-lg text-white">{analysis.duration || "0m 00s"}</p>
+                            </div>
+                            <div className="pt-2 md:pt-0">
+                                <p className="text-[10px] uppercase tracking-widest text-gray-500 mb-1">Intensity</p>
+                                <p className={`font-mono text-lg ${analysis.intensity === 'High' ? 'text-red-400' : 'text-white'}`}>
+                                    {analysis.intensity || "Medium"}
+                                </p>
+                            </div>
+                            <div className="pt-2 md:pt-0">
+                                <p className="text-[10px] uppercase tracking-widest text-gray-500 mb-1">Executive State</p>
+                                <p className="font-serif italic text-lg text-tactical-amber">
+                                    {analysis.executive_state || analysis.tone || "Reflective"}
+                                </p>
+                            </div>
                         </div>
                     </div>
                 )}
