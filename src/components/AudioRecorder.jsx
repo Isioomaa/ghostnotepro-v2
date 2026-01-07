@@ -9,18 +9,6 @@ const PLATFORMS = [
     { id: 'linkedin', name: 'LinkedIn' },
 ];
 
-const MODE_DESCRIPTIONS = {
-    'record': 'Capture your strategic thoughts via voice recording.',
-    'upload': 'Upload an existing audio file for analysis.'
-};
-
-const SYNTHESIS_STEPS = [
-    'Uploading audio...',
-    'Transcribing voice...',
-    'Extracting core insights...',
-    'Formatting final strategy...'
-];
-
 const AudioRecorder = ({ onUploadSuccess, t, languageName, isPro }) => {
     // Robust Boolean Check (Handles String/Boolean from Props)
     const isProActive = String(isPro) === 'true' || isPro === true;
@@ -43,6 +31,13 @@ const AudioRecorder = ({ onUploadSuccess, t, languageName, isPro }) => {
     const audioChunksRef = useRef([]);
     const timerRef = useRef(null);
 
+    const SYNTHESIS_STEPS = [
+        t.messages.uploading,
+        t.messages.transcribing,
+        t.messages.extracting,
+        t.messages.formatting
+    ];
+
     // Cycle through synthesis steps
     useEffect(() => {
         if (loading) {
@@ -58,7 +53,7 @@ const AudioRecorder = ({ onUploadSuccess, t, languageName, isPro }) => {
 
             return () => clearInterval(interval);
         }
-    }, [loading]);
+    }, [loading]); // SYNTHESIS_STEPS dependency omitted to avoid reset loop, it effectively updates if t changes but loading is typically short.
 
     // Dramatic pause for transmute button (700ms delay)
     useEffect(() => {
@@ -132,7 +127,7 @@ const AudioRecorder = ({ onUploadSuccess, t, languageName, isPro }) => {
             }, 1000);
 
         } catch (err) {
-            setError('Microphone access required.');
+            setError(t.messages.mic_error);
         }
     };
 
@@ -171,8 +166,7 @@ const AudioRecorder = ({ onUploadSuccess, t, languageName, isPro }) => {
         setLoading(true);
 
         try {
-
-            // response is now { status: "success", data: { transcription, core_thesis, strategic_pillars, executive_state } }
+            // Pass languageName to backend for localized processing
             const response = await transmuteAudio(audioData, languageName);
 
             // Handle both legacy (string) and new (JSON) formats
@@ -183,18 +177,9 @@ const AudioRecorder = ({ onUploadSuccess, t, languageName, isPro }) => {
                 // New JSON format
                 const { transcription, executive_state, core_thesis, strategic_pillars } = response.data;
 
-                // For Scribe view compatibility, we combine thesis + pillars for the "text" prop if needed,
-                // BUT SynthesisResult now handles structured data if passed.
-                // Re-using the passed text prop heavily might break things if it expects a string.
-                // SynthesisResult expects `text` which is displayed as "Transcription".
-                // We should pass the actual transcription as `text`.
-                // And pass the rest as `analysis` or a new prop.
-                // However, App.jsx uses `text` for `transcription` state.
                 textValue = transcription || "";
 
                 // Calculate Emphasis Audit
-                // WPM = Word Count / (Duration in Minutes)
-                // Duration is recordingTime (seconds). If upload, we might not have it easily, assume avg or 0.
                 const durationSeconds = recordingTime || 60; // Fallback if 0 (upload mode)
                 const wordCount = textValue.trim().split(/\s+/).length;
                 const wpm = Math.round(wordCount / (durationSeconds / 60));
@@ -214,10 +199,6 @@ const AudioRecorder = ({ onUploadSuccess, t, languageName, isPro }) => {
                         intensity: intensity,
                         executive_state: executive_state || "Reflective"
                     },
-                    // Pass the Scribe structured data too so we don't need to re-generate it?
-                    // SynthesisResult currently calls generation separately.
-                    // If we have it here, we could potentially pass it to pre-fill?
-                    // For now, let's just pass the audit.
                     content: {
                         core_thesis: response.data.core_thesis,
                         strategic_pillars: response.data.strategic_pillars
@@ -236,7 +217,7 @@ const AudioRecorder = ({ onUploadSuccess, t, languageName, isPro }) => {
             onUploadSuccess(textValue, selectedPlatforms, analysisData);
         } catch (err) {
             console.error(err);
-            setError(err.message || 'Transcription failed.');
+            setError(err.message || t.messages.transmutation_fail || 'Transcription failed.');
         } finally {
             setLoading(false);
         }
@@ -293,19 +274,19 @@ const AudioRecorder = ({ onUploadSuccess, t, languageName, isPro }) => {
                         onClick={() => { setMode('record'); setError(null); }}
                         className={`mode-link ${mode === 'record' ? 'active' : ''}`}
                     >
-                        {t.record}
+                        {t.buttons.record}
                     </button>
                     <span className="text-[#cccccc]">|</span>
                     <button
                         onClick={() => { setMode('upload'); setError(null); }}
                         className={`mode-link ${mode === 'upload' ? 'active' : ''}`}
                     >
-                        {t.upload}
+                        {t.buttons.upload}
                     </button>
                 </div>
 
                 <p className="text-[#999] text-xs italic max-w-xs text-center">
-                    {MODE_DESCRIPTIONS[mode]}
+                    {mode === 'record' ? t.modes.record_desc : t.modes.upload_desc}
                 </p>
             </div>
 
@@ -328,11 +309,11 @@ const AudioRecorder = ({ onUploadSuccess, t, languageName, isPro }) => {
                                         onClick={() => setShowPaywall(true)}
                                         className="text-amber-500 text-xs mt-2 cursor-pointer hover:underline"
                                     >
-                                        Free transmutations complete. Upgrade to Pro
+                                        {t.messages.free_limit}
                                     </p>
                                 )}
                                 {!(!isProActive && getUsageCount() >= LIMIT) && (
-                                    <p className="text-[#cccccc] text-sm">Tap to Record</p>
+                                    <p className="text-[#cccccc] text-sm">{t.messages.tap_record}</p>
                                 )}
                             </div>
                         ) : isRecording ? (
@@ -345,7 +326,7 @@ const AudioRecorder = ({ onUploadSuccess, t, languageName, isPro }) => {
                                 </button>
                                 <div className="text-center space-y-2">
                                     <p className="text-[#F9F7F5] text-2xl font-light tracking-wider">{formatTime(recordingTime)}</p>
-                                    <p className="text-[#999] text-xs">Tap to Finish</p>
+                                    <p className="text-[#999] text-xs">{t.messages.tap_finish}</p>
                                 </div>
                             </>
                         ) : audioBlob ? (
@@ -359,8 +340,8 @@ const AudioRecorder = ({ onUploadSuccess, t, languageName, isPro }) => {
                                     {formatTime(recordingTime)}
                                 </p>
                                 <div className="flex space-x-6 justify-center text-sm">
-                                    <button onClick={discardRecording} className="text-[#999] hover:text-[#F9F7F5]">Discard</button>
-                                    <button onClick={startRecording} className="text-[#A88E65] hover:opacity-70">Re-record</button>
+                                    <button onClick={discardRecording} className="text-[#999] hover:text-[#F9F7F5]">{t.buttons.discard}</button>
+                                    <button onClick={startRecording} className="text-[#A88E65] hover:opacity-70">{t.buttons.rerecord}</button>
                                 </div>
                             </div>
                         ) : null}
@@ -385,7 +366,7 @@ const AudioRecorder = ({ onUploadSuccess, t, languageName, isPro }) => {
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                                     </svg>
                                 </button>
-                                <p className="text-[#cccccc] text-sm">{t.select_file}</p>
+                                <p className="text-[#cccccc] text-sm">{t.buttons.select_file}</p>
                             </>
                         ) : (
                             <div className="text-center space-y-4">
@@ -395,7 +376,7 @@ const AudioRecorder = ({ onUploadSuccess, t, languageName, isPro }) => {
                                     </svg>
                                 </div>
                                 <p className="text-[#F9F7F5] text-sm font-light">{file.name}</p>
-                                <button onClick={() => setFile(null)} className="text-[#999] text-sm hover:text-[#F9F7F5]">Remove</button>
+                                <button onClick={() => setFile(null)} className="text-[#999] text-sm hover:text-[#F9F7F5]">{t.buttons.remove}</button>
                             </div>
                         )}
                     </div>
@@ -414,7 +395,7 @@ const AudioRecorder = ({ onUploadSuccess, t, languageName, isPro }) => {
                         whileTap={{ scale: 0.96 }}
                     >
                         <span className="text-lg">✨</span>
-                        <span>Transmute my thoughts</span>
+                        <span>{t.buttons.transmute}</span>
                     </motion.button>
 
                     <motion.button
@@ -438,7 +419,7 @@ const AudioRecorder = ({ onUploadSuccess, t, languageName, isPro }) => {
                                 setAudioBlob(null);
                                 setFile(null);
                                 setRecordingTime(0);
-                                alert('Saved to Drafts! 💭');
+                                alert(t.messages.draft_saved);
                             } catch (err) {
                                 console.error(err);
                                 setError('Failed to save draft locally.');
@@ -449,11 +430,11 @@ const AudioRecorder = ({ onUploadSuccess, t, languageName, isPro }) => {
                         whileTap={{ scale: 0.96 }}
                     >
                         <span>💭</span>
-                        <span>{savingDraft ? 'Saving...' : 'Save Draft'}</span>
+                        <span>{savingDraft ? 'Saving...' : t.buttons.save_draft}</span>
                     </motion.button>
 
                     <p className="text-[#666] text-xs italic">
-                        Ready to turn noise into signal.
+                        {t.messages.ready}
                     </p>
                 </div>
             )}

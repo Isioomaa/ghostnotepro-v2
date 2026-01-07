@@ -5,11 +5,11 @@ import { getLanguageName } from '../constants/languages';
 const LandingPage = ({ onUploadSuccess, t, currentLang, isPro }) => {
     return (
         <section className="text-center mb-12 fade-in">
-            <h1 className="font-playfair font-bold text-4xl leading-tight lg:text-7xl lg:leading-tight mb-6 tracking-tight">
-                Turn Chaos Into <span className="italic text-[#D4AF37]">Strategy.</span>
+            <h1 className="font-playfair font-bold text-4xl leading-tight md:text-5xl md:leading-tight lg:text-7xl lg:leading-tight mb-6 tracking-tight">
+                {t.hero.title}<span className="italic text-[#D4AF37]">{t.hero.titleHighlight}</span>
             </h1>
             <p className="font-sans text-base md:text-xl opacity-60 max-w-xl mx-auto mb-12 font-light px-4">
-                The private engine to transmute executive voice notes into a strategic suite.
+                {t.hero.subtitle}
             </p>
 
             {/* The Machine (AudioRecorder) */}
@@ -25,7 +25,7 @@ const LandingPage = ({ onUploadSuccess, t, currentLang, isPro }) => {
             {/* Social Proof */}
             <div className="mt-12 opacity-40 text-sm tracking-[0.3em] uppercase flex flex-col items-center space-y-4 px-4 text-center">
                 <span className="h-px w-12 bg-white/20"></span>
-                <p>No typing. No hallucinations. Just your intent, crystallized.</p>
+                <p>{t.hero.footer}</p>
             </div>
         </section>
     );

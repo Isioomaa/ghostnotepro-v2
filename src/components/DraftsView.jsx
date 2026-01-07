@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import axios from 'axios';
+import { TRANSLATIONS } from '../constants/languages';
 
-const API_BASE_URL = '/api';
-
-const DraftsView = ({ onClose }) => {
+const DraftsView = ({ onClose, t }) => {
     const [drafts, setDrafts] = useState([]);
     const [loading, setLoading] = useState(true);
+
+    // Default fallback to English if t prop is missing (safe guard)
+    const localT = t || TRANSLATIONS.EN;
 
     useEffect(() => {
         fetchDrafts();
@@ -35,13 +36,13 @@ const DraftsView = ({ onClose }) => {
 
     return (
         <div className="fixed inset-0 bg-black/90 z-50 overflow-y-auto">
-            <div className="max-w-4xl mx-auto px-6 py-12">
+            <div className="max-w-4xl mx-auto px-4 py-8 md:px-6 md:py-12">
                 {/* Header */}
                 <div className="flex justify-between items-start mb-12">
                     <div>
-                        <h2 className="font-playfair font-bold text-3xl text-white mb-2">Drafts</h2>
+                        <h2 className="font-playfair font-bold text-3xl text-white mb-2">{localT.navigation?.drafts || "DRAFTS"}</h2>
                         <p className="text-gray-400 text-sm italic">
-                            Raw ideas. Unhatched plans. Dump your brain here.
+                            {localT.drafts_view?.subtitle || "Raw ideas. Unhatched plans. Dump your brain here."}
                         </p>
                     </div>
                     <motion.button
@@ -68,9 +69,9 @@ const DraftsView = ({ onClose }) => {
                         <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-zinc-800 flex items-center justify-center">
                             <span className="text-3xl">💭</span>
                         </div>
-                        <h3 className="text-white font-bold mb-2">No drafts yet</h3>
+                        <h3 className="text-white font-bold mb-2">{localT.drafts_view?.empty_title || "No drafts yet"}</h3>
                         <p className="text-gray-400 text-sm">
-                            Record a thought and hit "Save Draft" to save it here.
+                            {localT.drafts_view?.empty_desc || "Record a thought and hit 'Save Draft' to save it here."}
                         </p>
                     </div>
                 )}

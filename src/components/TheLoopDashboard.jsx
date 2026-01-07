@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { fetchDecisionHistory, auditDecision } from '../services/gemini';
+import { TRANSLATIONS } from '../constants/languages';
 
-const TheLoopDashboard = ({ onClose, languageName }) => {
+const TheLoopDashboard = ({ onClose, languageName, t }) => {
     const [decisions, setDecisions] = useState([]);
     const [loading, setLoading] = useState(true);
     const [auditing, setAuditing] = useState(null); // ID of decision being audited
@@ -14,6 +15,8 @@ const TheLoopDashboard = ({ onClose, languageName }) => {
     const mediaRecorderRef = useRef(null);
     const audioChunksRef = useRef([]);
     const timerRef = useRef(null);
+
+    const localT = t || TRANSLATIONS.EN;
 
     useEffect(() => {
         loadHistory();
@@ -46,7 +49,7 @@ const TheLoopDashboard = ({ onClose, languageName }) => {
             setRecordingTime(0);
             timerRef.current = setInterval(() => setRecordingTime(p => p + 1), 1000);
         } catch (err) {
-            alert("Microphone access required.");
+            alert(localT.messages?.mic_error || "Microphone access required.");
         }
     };
 
@@ -94,8 +97,8 @@ const TheLoopDashboard = ({ onClose, languageName }) => {
                 {/* Header */}
                 <div className="flex justify-between items-start mb-16">
                     <div>
-                        <h2 className="font-playfair font-bold text-4xl text-white mb-3">History</h2>
-                        <p className="text-gray-400 text-sm tracking-widest uppercase">Judgment Variance Engine</p>
+                        <h2 className="font-playfair font-bold text-4xl text-white mb-3">{localT.history_view?.title || "History"}</h2>
+                        <p className="text-gray-400 text-sm tracking-widest uppercase">{localT.history_view?.subtitle || "Judgment Variance Engine"}</p>
                     </div>
                     <motion.button onClick={onClose} className="text-gray-500 hover:text-white" whileTap={{ scale: 0.9 }}>
                         <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -112,8 +115,8 @@ const TheLoopDashboard = ({ onClose, languageName }) => {
 
                 {!loading && decisions.length === 0 && (
                     <div className="text-center py-32 border border-white/5 bg-white/2 rounded-xl">
-                        <p className="text-gray-500 font-serif italic mb-4">"The unexamined decision is not worth making."</p>
-                        <p className="text-white text-sm font-sans tracking-widest font-bold">NO WAGERS FOUND</p>
+                        <p className="text-gray-500 font-serif italic mb-4">{localT.history_view?.quote || "\"The unexamined decision is not worth making.\""}</p>
+                        <p className="text-white text-sm font-sans tracking-widest font-bold">{localT.history_view?.no_wagers || "NO WAGERS FOUND"}</p>
                     </div>
                 )}
 
@@ -146,18 +149,18 @@ const TheLoopDashboard = ({ onClose, languageName }) => {
                                         className="bg-red-500 text-black text-[10px] font-bold px-4 py-2 rounded-sm uppercase tracking-widest hover:bg-red-400"
                                         whileTap={{ scale: 0.95 }}
                                     >
-                                        Record Update
+                                        {localT.history_view?.record_update || "Record Update"}
                                     </motion.button>
                                 )}
 
                                 {d.status === 'AUDITED' && (
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6 pt-6 border-t border-white/5">
                                         <div>
-                                            <p className="text-red-400 text-[10px] font-bold uppercase tracking-widest mb-2">Blind Spot</p>
+                                            <p className="text-red-400 text-[10px] font-bold uppercase tracking-widest mb-2">{localT.history_view?.blind_spot || "Blind Spot"}</p>
                                             <p className="text-gray-400 text-sm italic">{d.blind_spot}</p>
                                         </div>
                                         <div>
-                                            <p className="text-tactical-amber text-[10px] font-bold uppercase tracking-widest mb-2">Insight</p>
+                                            <p className="text-tactical-amber text-[10px] font-bold uppercase tracking-widest mb-2">{localT.history_view?.insight || "Insight"}</p>
                                             <p className="text-gray-400 text-sm italic">{d.growth_insight}</p>
                                         </div>
                                     </div>
@@ -169,16 +172,16 @@ const TheLoopDashboard = ({ onClose, languageName }) => {
                     {/* Stats/History Side */}
                     <div className="space-y-6">
                         <div className="bg-white/5 p-8 rounded-xl border border-white/10">
-                            <h4 className="text-white text-xs font-bold tracking-[0.3em] uppercase mb-8 pb-4 border-b border-white/10">Judgment Stats</h4>
+                            <h4 className="text-white text-xs font-bold tracking-[0.3em] uppercase mb-8 pb-4 border-b border-white/10">{localT.history_view?.accuracy_score || "Judgment Stats"}</h4>
                             <div className="space-y-8">
                                 <div>
-                                    <p className="text-gray-500 text-[10px] uppercase tracking-widest mb-1">Avg Accuracy</p>
+                                    <p className="text-gray-500 text-[10px] uppercase tracking-widest mb-1">{localT.history_view?.avg_accuracy || "Avg Accuracy"}</p>
                                     <p className="text-3xl font-serif text-white">
                                         {Math.round(decisions.filter(d => d.status === 'AUDITED').reduce((a, b) => a + b.accuracy_score, 0) / (decisions.filter(d => d.status === 'AUDITED').length || 1))}%
                                     </p>
                                 </div>
                                 <div>
-                                    <p className="text-gray-500 text-[10px] uppercase tracking-widest mb-1">Total Wagers</p>
+                                    <p className="text-gray-500 text-[10px] uppercase tracking-widest mb-1">{localT.history_view?.total_wagers || "Total Wagers"}</p>
                                     <p className="text-3xl font-serif text-white">{decisions.length}</p>
                                 </div>
                             </div>
@@ -186,7 +189,7 @@ const TheLoopDashboard = ({ onClose, languageName }) => {
 
                         <div className="p-8 border border-white/5 rounded-xl">
                             <p className="text-gray-500 text-xs italic leading-relaxed">
-                                "History is not a burden on the memory but an illumination of the soul."
+                                {localT.history_view?.quote || "\"History is not a burden on the memory but an illumination of the soul.\""}
                             </p>
                         </div>
                     </div>
@@ -209,8 +212,8 @@ const TheLoopDashboard = ({ onClose, languageName }) => {
 
                                 {!auditResult ? (
                                     <>
-                                        <h3 className="font-playfair font-bold text-3xl text-white mb-4">The Reckoning</h3>
-                                        <p className="text-gray-400 text-sm mb-12">Record what actually happened. Gemini will calculate the variance.</p>
+                                        <h3 className="font-playfair font-bold text-3xl text-white mb-4">{localT.history_view?.reckoning_title || "The Reckoning"}</h3>
+                                        <p className="text-gray-400 text-sm mb-12">{localT.history_view?.reckoning_desc || "Record what actually happened..."}</p>
 
                                         {!audioBlob ? (
                                             <div className="flex flex-col items-center space-y-6">
@@ -221,35 +224,35 @@ const TheLoopDashboard = ({ onClose, languageName }) => {
                                                     {isRecording ? <div className="w-6 h-6 bg-white rounded-sm"></div> : <span className="text-2xl">🎙️</span>}
                                                 </button>
                                                 <p className="text-xs tracking-widest uppercase text-gray-500">
-                                                    {isRecording ? `Recording... ${recordingTime}s` : 'Tap to start update'}
+                                                    {isRecording ? `Recording... ${recordingTime}s` : (localT.history_view?.record_update || 'Tap to start update')}
                                                 </p>
                                             </div>
                                         ) : (
                                             <div className="space-y-8">
                                                 <div className="w-20 h-20 mx-auto bg-green-500/20 text-green-500 rounded-full flex items-center justify-center text-3xl">✓</div>
-                                                <p className="text-white text-sm">Update Captured.</p>
+                                                <p className="text-white text-sm">{localT.history_view?.update_captured || "Update Captured."}</p>
                                                 <button
                                                     onClick={handleAuditSubmit}
                                                     disabled={loading}
                                                     className="w-full bg-red-500 text-black font-bold py-4 rounded-sm tracking-[0.2em] uppercase hover:bg-red-400 disabled:opacity-50"
                                                 >
-                                                    {loading ? 'Running Variance Engine...' : 'Seal Judgment'}
+                                                    {loading ? (localT.history_view?.running || 'Running Variance Engine...') : (localT.history_view?.seal_judgment || 'Seal Judgment')}
                                                 </button>
-                                                <button onClick={() => setAudioBlob(null)} className="text-gray-500 text-[10px] uppercase tracking-widest">Discard and Re-record</button>
+                                                <button onClick={() => setAudioBlob(null)} className="text-gray-500 text-[10px] uppercase tracking-widest">{localT.history_view?.discard || "Discard and Re-record"}</button>
                                             </div>
                                         )}
                                     </>
                                 ) : (
                                     <div className="space-y-8 animate-in zoom-in duration-300">
                                         <div className="text-6xl font-serif text-white mb-4">{auditResult.accuracy_score}%</div>
-                                        <p className="text-tactical-amber text-xs font-bold uppercase tracking-widest">Judgment Accuracy Score</p>
+                                        <p className="text-tactical-amber text-xs font-bold uppercase tracking-widest">{localT.history_view?.accuracy_score || "Judgment Accuracy Score"}</p>
                                         <div className="bg-white/5 p-6 rounded text-left space-y-4">
                                             <div>
-                                                <p className="text-red-400 text-[10px] font-bold uppercase tracking-widest mb-1">The Blind Spot</p>
+                                                <p className="text-red-400 text-[10px] font-bold uppercase tracking-widest mb-1">{localT.history_view?.blind_spot || "The Blind Spot"}</p>
                                                 <p className="text-gray-300 text-sm leading-relaxed">{auditResult.blind_spot}</p>
                                             </div>
                                             <div>
-                                                <p className="text-tactical-amber text-[10px] font-bold uppercase tracking-widest mb-1">Growth Insight</p>
+                                                <p className="text-tactical-amber text-[10px] font-bold uppercase tracking-widest mb-1">{localT.history_view?.insight || "Growth Insight"}</p>
                                                 <p className="text-gray-300 text-sm leading-relaxed">{auditResult.growth_insight}</p>
                                             </div>
                                         </div>
@@ -257,7 +260,7 @@ const TheLoopDashboard = ({ onClose, languageName }) => {
                                             onClick={() => { setAuditing(null); setAuditResult(null); setAudioBlob(null); }}
                                             className="w-full border border-white/20 text-white font-bold py-4 rounded-sm tracking-[0.2em] uppercase hover:bg-white/10"
                                         >
-                                            Return to History
+                                            {localT.history_view?.return || "Return to History"}
                                         </button>
                                     </div>
                                 )}

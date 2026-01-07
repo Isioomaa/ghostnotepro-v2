@@ -1,23 +1,23 @@
 import React from 'react';
 import { usePaystackPayment } from 'react-paystack';
 import { setPro } from '../utils/usageTracker';
+import { TRANSLATIONS } from '../constants/languages';
 
-const PaystackSub = ({ email, amount, currency, onSuccess, onClose }) => {
+const PaystackSub = ({ email, amount, currency, onSuccess, onClose, t }) => {
     // 1. Safety Fallbacks
     const safeEmail = email || "customer@example.com";
     const safeAmount = amount || 2000;
     const safeCurrency = currency || 'USD';
+    const localT = t || TRANSLATIONS.EN;
 
     // Dynamic Button Text Logic
     const buttonText = safeCurrency === 'USD'
-        ? "Continue with Membership — $20/month"
-        : "Continue with Membership — ₦30,000/month";
+        ? (localT.paywall?.button_usd || "Continue with Membership — $20/month")
+        : (localT.paywall?.button_ngn || "Continue with Membership — ₦30,000/month");
 
     // Use a realistic-looking placeholder if the user hasn't set their key yet
     const fallbackKey = "pk_test_000000000000000000000000000000000000000";
     const publicKey = import.meta.env.VITE_PAYSTACK_PUBLIC_KEY || fallbackKey;
-
-    console.log("Initializing Paystack with:", { safeCurrency, safeAmount, hasKey: !!import.meta.env.VITE_PAYSTACK_PUBLIC_KEY });
 
     const config = {
         reference: `T${Date.now()}`,
@@ -36,7 +36,7 @@ const PaystackSub = ({ email, amount, currency, onSuccess, onClose }) => {
     const handlePayment = () => {
         if (!initializePayment) {
             console.error("Paystack initialization failed");
-            alert("Payment system is temporarily unavailable. Please try again.");
+            alert(localT.paywall?.payment_error || "Payment system is temporarily unavailable. Please try again.");
             return;
         }
 
@@ -56,11 +56,11 @@ const PaystackSub = ({ email, amount, currency, onSuccess, onClose }) => {
                             setPro(true);
                             if (onSuccess) onSuccess(reference);
                         } else {
-                            alert("Verification Failed: " + (data.message || "Invalid transaction"));
+                            alert((localT.paywall?.verification_failed || "Verification Failed") + ": " + (data.message || "Invalid transaction"));
                         }
                     } catch (error) {
                         console.error("Verification Error:", error);
-                        alert("Verification failed due to network error.");
+                        alert(localT.paywall?.network_error || "Verification failed due to network error.");
                     }
                 },
                 () => {
@@ -70,7 +70,7 @@ const PaystackSub = ({ email, amount, currency, onSuccess, onClose }) => {
             );
         } catch (err) {
             console.error("Paystack Execution Error:", err);
-            alert("Could not open payment gateway. Please refresh.");
+            alert(localT.paywall?.gateway_error || "Could not open payment gateway. Please refresh.");
         }
     };
 

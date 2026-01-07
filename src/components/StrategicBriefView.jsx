@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import { TRANSLATIONS } from '../constants/languages';
 
 const StrategicBriefView = () => {
     const { id } = useParams();
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [t, setT] = useState(TRANSLATIONS.EN); // Default to EN
 
     useEffect(() => {
         // Fetch from local storage (Simulated Archive)
@@ -12,7 +14,16 @@ const StrategicBriefView = () => {
             try {
                 const archived = localStorage.getItem(`archive:${id}`);
                 if (archived) {
-                    setData(JSON.parse(archived));
+                    const parsedData = JSON.parse(archived);
+                    setData(parsedData);
+
+                    // Identify language from archived data info if available, else EN
+                    // Note: Current archive saving logic in SynthesisResult saves 'language' key
+                    if (parsedData.language && TRANSLATIONS[parsedData.language]) {
+                        setT(TRANSLATIONS[parsedData.language]);
+                        // Set doc direction if needed
+                        document.documentElement.dir = parsedData.language === 'AR' ? 'rtl' : 'ltr';
+                    }
                 }
             } catch (err) {
                 console.error("Failed to load archive", err);
@@ -26,7 +37,9 @@ const StrategicBriefView = () => {
     if (loading) {
         return (
             <div className="min-h-screen bg-[#FFFEF7] flex items-center justify-center text-gray-900 font-serif">
-                <span className="animate-pulse tracking-widest uppercase text-xs">Retrieving from Vault...</span>
+                <span className="animate-pulse tracking-widest uppercase text-xs">
+                    {t.brief_view?.retrieving || "Retrieving from Vault..."}
+                </span>
             </div>
         );
     }
@@ -34,9 +47,11 @@ const StrategicBriefView = () => {
     if (!data) {
         return (
             <div className="min-h-screen bg-[#FFFEF7] flex flex-col items-center justify-center text-gray-900 font-serif p-8">
-                <h1 className="text-3xl font-playfair mb-4">404: Archive Not Found</h1>
-                <p className="text-gray-500 italic mb-8">This strategic brief has been expunged or never existed.</p>
-                <Link to="/" className="text-xs font-bold uppercase tracking-widest border-b border-gray-900 pb-1 hover:opacity-50 transition-opacity">Return to Command</Link>
+                <h1 className="text-3xl font-playfair mb-4">{t.brief_view?.not_found || "404: Archive Not Found"}</h1>
+                <p className="text-gray-500 italic mb-8">{t.brief_view?.expunged || "This strategic brief has been expunged or never existed."}</p>
+                <Link to="/" className="text-xs font-bold uppercase tracking-widest border-b border-gray-900 pb-1 hover:opacity-50 transition-opacity">
+                    {t.brief_view?.return_command || "Return to Command"}
+                </Link>
             </div>
         );
     }
@@ -47,15 +62,15 @@ const StrategicBriefView = () => {
     const audit = data.analysis?.audit || {};
 
     return (
-        <div className="min-h-screen bg-[#FFFEF7] text-gray-900 py-12 px-6 selection:bg-[#D4AF37] selection:text-white print:bg-white print:p-0">
+        <div className="min-h-screen bg-[#FFFEF7] text-gray-900 py-12 px-6 selection:bg-[#D4AF37] selection:text-white print:bg-white print:p-0 fade-in">
             {/* Museum Container */}
             <article className="max-w-[800px] mx-auto bg-white shadow-sm border border-gray-100 p-12 md:p-20 print:shadow-none print:border-none print:p-0">
 
                 {/* Header */}
                 <header className="mb-12 border-b-2 border-black pb-8">
                     <div className="flex justify-between items-baseline mb-6 font-sans text-[10px] font-bold uppercase tracking-[0.2em] text-gray-500">
-                        <span>GhostNote Pro Archive</span>
-                        <span>{new Date(data.timestamp || Date.now()).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
+                        <span>{t.brief_view?.archive_label || "GhostNote Pro Archive"}</span>
+                        <span>{new Date(data.timestamp || Date.now()).toLocaleDateString(data.language === 'EN' ? 'en-US' : data.language, { year: 'numeric', month: 'long', day: 'numeric' })}</span>
                     </div>
 
                     <h1 className="font-playfair font-bold text-4xl md:text-6xl leading-tight mb-8 text-black">
@@ -65,11 +80,11 @@ const StrategicBriefView = () => {
                     {/* Emphasis Audit Metadata */}
                     <div className="flex flex-col md:flex-row md:items-center justify-between font-mono text-xs text-gray-600 bg-gray-50 p-4 border-t border-b border-gray-200">
                         <div className="space-x-6">
-                            <span>DURATION: <span className="text-black">{audit.duration || "Unknown"}</span></span>
-                            <span>INTENSITY: <span className={`font-bold ${audit.intensity === 'High' ? 'text-red-700' : 'text-black'}`}>{audit.intensity || "Medium"}</span></span>
+                            <span>{t.brief_view?.duration || "DURATION"}: <span className="text-black">{audit.duration || "Unknown"}</span></span>
+                            <span>{t.brief_view?.intensity || "INTENSITY"}: <span className={`font-bold ${audit.intensity === 'High' ? 'text-red-700' : 'text-black'}`}>{audit.intensity || "Medium"}</span></span>
                         </div>
                         <div className="mt-2 md:mt-0 font-serif italic text-gray-800">
-                            State: {audit.executive_state || "Reflective"}
+                            {t.brief_view?.state || "State"}: {audit.executive_state || "Reflective"}
                         </div>
                     </div>
                 </header>
@@ -81,7 +96,7 @@ const StrategicBriefView = () => {
                     {isStrategist ? (
                         <>
                             <section>
-                                <h3 className="font-sans font-bold text-xs uppercase tracking-[0.2em] text-gray-400 mb-6">Executive Judgment</h3>
+                                <h3 className="font-sans font-bold text-xs uppercase tracking-[0.2em] text-gray-400 mb-6">{t.strategist?.judgment || "Executive Judgment"}</h3>
                                 <p className="font-medium text-xl md:text-2xl leading-relaxed text-black">
                                     {content.executive_judgement}
                                 </p>
@@ -90,14 +105,14 @@ const StrategicBriefView = () => {
                             <hr className="border-gray-200" />
 
                             <section>
-                                <h3 className="font-sans font-bold text-xs uppercase tracking-[0.2em] text-red-800/60 mb-6">Risk Audit</h3>
+                                <h3 className="font-sans font-bold text-xs uppercase tracking-[0.2em] text-red-800/60 mb-6">{t.strategist?.risk_audit || "Risk Audit"}</h3>
                                 <div className="bg-red-50 p-8 border-l-2 border-red-800 text-red-900 text-base italic">
                                     {content.risk_audit}
                                 </div>
                             </section>
 
                             <section>
-                                <h3 className="font-sans font-bold text-xs uppercase tracking-[0.2em] text-gray-400 mb-6">Drafted Communication</h3>
+                                <h3 className="font-sans font-bold text-xs uppercase tracking-[0.2em] text-gray-400 mb-6">{t.strategist?.email_draft || "Drafted Communication"}</h3>
                                 <div className="font-mono text-sm bg-gray-50 p-8 border border-gray-100 text-gray-700 whitespace-pre-wrap">
                                     {typeof content.email_draft === 'string' ? content.email_draft : (content.email_draft?.body || "Top Secret")}
                                 </div>
@@ -110,7 +125,7 @@ const StrategicBriefView = () => {
 
                             {content.strategic_pillars && content.strategic_pillars.length > 0 && (
                                 <section>
-                                    <h3 className="font-sans font-bold text-xs uppercase tracking-[0.2em] text-gray-400 mb-8">Strategic Pillars</h3>
+                                    <h3 className="font-sans font-bold text-xs uppercase tracking-[0.2em] text-gray-400 mb-8">{t.scribe?.strategic_pillars || "Strategic Pillars"}</h3>
                                     <div className="space-y-10">
                                         {content.strategic_pillars.map((pillar, idx) => (
                                             <div key={idx}>
@@ -126,7 +141,7 @@ const StrategicBriefView = () => {
 
                             {content.tactical_steps && content.tactical_steps.length > 0 && (
                                 <section className="bg-gray-50 border-t-2 border-black p-8 mt-12">
-                                    <h3 className="font-sans font-bold text-xs uppercase tracking-[0.2em] text-gray-500 mb-6">Tactical Roadmap</h3>
+                                    <h3 className="font-sans font-bold text-xs uppercase tracking-[0.2em] text-gray-500 mb-6">{t.scribe?.tactical_steps || "Tactical Roadmap"}</h3>
                                     <ul className="space-y-4 list-none">
                                         {content.tactical_steps.map((step, idx) => (
                                             <li key={idx} className="flex items-start">
@@ -144,12 +159,12 @@ const StrategicBriefView = () => {
 
                 {/* Footer */}
                 <footer className="mt-20 pt-12 border-t border-gray-200 text-center print:hidden">
-                    <p className="font-serif italic text-gray-400 mb-8">This strategic brief was generated by GhostNote Pro.</p>
+                    <p className="font-serif italic text-gray-400 mb-8">{t.brief_view?.generated_by || "This strategic brief was generated by GhostNote Pro."}</p>
                     <Link
                         to="/"
                         className="inline-block bg-black text-white font-sans text-xs font-bold uppercase tracking-[0.2em] px-8 py-4 hover:bg-gray-800 transition-colors"
                     >
-                        Create Your Own Brief
+                        {t.brief_view?.create_own || "Create Your Own Brief"}
                     </Link>
                 </footer>
 

@@ -3,7 +3,7 @@ import LanguageSelector from './LanguageSelector';
 
 const Header = ({ isPro, currentLang, onLanguageChange, setShowPaywall, onOpenModal }) => {
     return (
-        <nav className="flex items-center justify-between px-6 py-6 max-w-7xl mx-auto w-full">
+        <nav className="flex flex-col md:flex-row items-center justify-between px-4 md:px-6 py-6 max-w-7xl mx-auto w-full gap-y-4 md:gap-y-0">
             <div className="font-playfair font-bold text-xl md:text-2xl text-[#D4AF37] whitespace-nowrap">
                 GHOSTNOTE PRO
             </div>

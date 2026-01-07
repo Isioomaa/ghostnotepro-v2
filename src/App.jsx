@@ -37,6 +37,11 @@ function MainApp() {
 
   const t = TRANSLATIONS[currentLang] || TRANSLATIONS.EN;
 
+  // RTL Support
+  useEffect(() => {
+    document.documentElement.dir = currentLang === 'AR' ? 'rtl' : 'ltr';
+  }, [currentLang]);
+
   const handleUploadSuccess = async (text, platforms, analysisData) => {
     if (!text) return;
     setTranscription(text);
@@ -93,7 +98,7 @@ function MainApp() {
       try {
         await navigator.share({
           title: 'GhostNote Pro',
-          text: "I'm using GhostNote Pro to transmute my thoughts. Try it here:",
+          text: t.messages.share_text,
           url: window.location.href,
         });
       } catch (err) {
@@ -102,7 +107,7 @@ function MainApp() {
     } else {
       try {
         await navigator.clipboard.writeText(window.location.href);
-        showCustomToast("Link copied to clipboard");
+        showCustomToast(t.messages.copy_success);
       } catch (err) {
         console.error('Failed to copy:', err);
       }
@@ -119,6 +124,7 @@ function MainApp() {
         onLanguageChange={setCurrentLang}
         setShowPaywall={setShowPaywall}
         onOpenModal={setActiveModal}
+        t={t}
       />
 
       {/* Main Navigation (Tabs) */}
@@ -129,13 +135,13 @@ function MainApp() {
               onClick={() => setActiveModal('drafts')}
               className={`text-[10px] uppercase tracking-[0.2em] transition-colors ${activeModal === 'drafts' ? 'text-tactical-amber font-bold' : 'text-gray-500 hover:text-white'}`}
             >
-              Drafts
+              {t.navigation.drafts}
             </button>
             <button
               onClick={() => setActiveModal('history')}
               className={`text-[10px] uppercase tracking-[0.2em] transition-colors ${activeModal === 'history' ? 'text-tactical-amber font-bold' : 'text-gray-500 hover:text-white'}`}
             >
-              History
+              {t.navigation.history}
             </button>
           </div>
           <LanguageSelector
@@ -145,7 +151,7 @@ function MainApp() {
         </div>
       )}
 
-      <div className="max-w-4xl mx-auto w-full px-6 py-8">
+      <div className="max-w-4xl mx-auto w-full px-4 md:px-6 py-8">
 
         {/* Hero Section / Landing Page */}
         {!transcription && (
@@ -164,6 +170,8 @@ function MainApp() {
               text={transcription}
               analysis={analysis}
               languageName={getLanguageName(currentLang)}
+              currentLang={currentLang}
+              t={t}
               onReset={handleReset}
               isPro={isPro}
               onShowToast={showCustomToast}
@@ -179,8 +187,8 @@ function MainApp() {
 
           {/* Left: System Navigation */}
           <div className="flex space-x-8 text-[10px] font-bold uppercase tracking-[0.3em]">
-            <button onClick={() => setActiveView('privacy')} className="text-zinc-600 hover:text-tactical-amber transition-colors">Privacy</button>
-            <button onClick={() => setActiveView('terms')} className="text-zinc-600 hover:text-tactical-amber transition-colors">Terms</button>
+            <button onClick={() => setActiveView('privacy')} className="text-zinc-600 hover:text-tactical-amber transition-colors">{t.legal.privacy}</button>
+            <button onClick={() => setActiveView('terms')} className="text-zinc-600 hover:text-tactical-amber transition-colors">{t.legal.terms}</button>
           </div>
 
           {/* Center: Social Interconnect */}
@@ -196,7 +204,7 @@ function MainApp() {
               onClick={handleShare}
               className="text-[10px] uppercase tracking-widest text-zinc-600 hover:text-tactical-amber transition-colors"
             >
-              {t.gift}
+              {t.buttons.gift}
             </button>
             <span className="text-[10px] text-zinc-800 font-mono tracking-tighter">SYSTEM v1.0.42</span>
           </div>
@@ -204,11 +212,12 @@ function MainApp() {
       </footer>
 
       {/* Modals */}
-      {activeModal === 'drafts' && <DraftsView onClose={() => setActiveModal(null)} />}
+      {activeModal === 'drafts' && <DraftsView onClose={() => setActiveModal(null)} t={t} />}
       {activeModal === 'history' && (
         <TheLoopDashboard
           onClose={() => setActiveModal(null)}
           languageName={getLanguageName(currentLang)}
+          t={t}
         />
       )}
 
@@ -229,6 +238,7 @@ function MainApp() {
         <PaywallModal
           onClose={() => setShowPaywall(false)}
           scenario="upsell"
+          t={t}
         />
       )}
     </div>

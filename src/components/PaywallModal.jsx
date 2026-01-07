@@ -1,11 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import PaystackSub from './PaystackSub';
+import { TRANSLATIONS } from '../constants/languages';
 
-const PaywallModal = ({ onClose, scenario = 'upsell' }) => {
+const PaywallModal = ({ onClose, scenario = 'upsell', t }) => {
     // 1. Initialize with Safe Defaults (Prevents Crash)
     const [currency, setCurrency] = useState('USD');
     const [amount, setAmount] = useState(2000); // $20.00 (2000 cents)
+
+    // Fallback if t is missing
+    const localT = t || TRANSLATIONS.EN;
 
     // 2. The "Lagos Check" (Inside useEffect)
     useEffect(() => {
@@ -44,12 +48,12 @@ const PaywallModal = ({ onClose, scenario = 'upsell' }) => {
                 {/* Premium Headlines */}
                 <div className="mb-12">
                     <h2 className="font-serif text-3xl md:text-5xl text-[#a88e65]/90 mb-8 leading-tight tracking-tight px-4">
-                        Continue turning thought into strategy
+                        {localT.paywall?.headline || "Continue turning thought into strategy"}
                     </h2>
 
                     <div className="space-y-6 max-w-sm mx-auto text-gray-400 font-light leading-relaxed px-2">
                         <p className="text-sm">
-                            Pro removes daily limits and unlocks executive-grade transmutation, confidence analysis, and shareable outputs.
+                            {localT.paywall?.subtext || "Pro removes daily limits and unlocks executive-grade transmutation, confidence analysis, and shareable outputs."}
                         </p>
                     </div>
                 </div>
@@ -64,19 +68,20 @@ const PaywallModal = ({ onClose, scenario = 'upsell' }) => {
                             onClose();
                         }}
                         onClose={() => console.log("Paystack modal closed")}
+                        t={localT}
                     />
 
                     {/* Footer Links */}
                     <div className="space-y-6">
                         <p className="text-[11px] text-gray-600 uppercase tracking-[0.2em] opacity-80">
-                            Cancel anytime. No hidden fees.
+                            {localT.paywall?.cancel || "Cancel anytime. No hidden fees."}
                         </p>
 
                         <button
                             onClick={onClose}
                             className="text-xs text-gray-500 hover:text-[#a88e65] transition-colors uppercase tracking-[0.3em] font-light"
                         >
-                            Restore Purchase
+                            {localT.paywall?.restore || "Restore Purchase"}
                         </button>
                     </div>
                 </div>
