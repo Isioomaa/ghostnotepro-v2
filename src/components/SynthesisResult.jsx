@@ -250,19 +250,8 @@ const SynthesisResult = ({ text, analysis, languageName, onReset, isPro, onShowT
                     ) : (
                         <div className={`transition-all duration-700 p-6 md:p-12 ${!isPro ? 'blur-md select-none opacity-40 grayscale-[0.5]' : 'animate-in fade-in'}`}>
                             <div className="space-y-12">
-                                {/* Emphasis Audit - Staggered Entry 0ms */}
-                                {proData.emphasis_audit && (
-                                    <motion.div
-                                        initial={{ opacity: 0, y: 20 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        transition={{ duration: 0.5, delay: 0 }}
-                                    >
-                                        <EmphasisAudit audit={proData.emphasis_audit} />
-                                    </motion.div>
-                                )}
-
                                 {/* Executive Judgement - Staggered Entry 150ms */}
-                                {proData.executive_judgement && (
+                                {(proData.judgment || proData.executive_judgement) && (
                                     <motion.div
                                         initial={{ opacity: 0, y: 20 }}
                                         animate={{ opacity: 1, y: 0 }}
@@ -271,16 +260,16 @@ const SynthesisResult = ({ text, analysis, languageName, onReset, isPro, onShowT
                                     >
                                         <div className="flex items-center space-x-2 mb-6">
                                             <span className="pulse-dot"></span>
-                                            <h4 className="font-sans font-bold uppercase tracking-widest text-xs text-tactical-amber">Executive Judgement</h4>
+                                            <h4 className="font-sans font-bold uppercase tracking-widest text-xs text-tactical-amber">Executive Judgment</h4>
                                         </div>
                                         <div className="font-sans text-lg md:text-xl font-medium leading-snug text-white">
-                                            {proData.executive_judgement}
+                                            {proData.judgment || proData.executive_judgement}
                                         </div>
                                     </motion.div>
                                 )}
 
                                 {/* Risk Audit */}
-                                {proData.risk_audit && (
+                                {(proData.riskAudit || proData.risk_audit) && (
                                     <motion.div
                                         initial={{ opacity: 0, y: 20 }}
                                         animate={{ opacity: 1, y: 0 }}
@@ -289,122 +278,21 @@ const SynthesisResult = ({ text, analysis, languageName, onReset, isPro, onShowT
                                     >
                                         <div className="flex items-center space-x-2 mb-6">
                                             <span className="pulse-dot"></span>
-                                            <h4 className="font-sans font-bold uppercase tracking-widest text-xs text-red-400">Risk Audit (Blind Spot)</h4>
+                                            <h4 className="font-sans font-bold uppercase tracking-widest text-xs text-red-400">Risk Audit</h4>
                                         </div>
-                                        <div className="font-mono text-sm text-red-400 bg-red-900/20 border border-red-900/30 p-8 rounded-sm leading-relaxed">
-                                            {proData.risk_audit}
-                                        </div>
-                                    </motion.div>
-                                )}
-
-                                {/* THE GUILLOTINE - Staggered Entry 300ms */}
-                                {proData.the_guillotine && proData.the_guillotine.length > 0 && (
-                                    <motion.div
-                                        initial={{ opacity: 0, y: 20 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        transition={{ duration: 0.5, delay: 0.3 }}
-                                        className="guillotine-card p-6"
-                                    >
-                                        <div className="flex items-center space-x-2 mb-4">
-                                            <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
-                                            <h4 className="font-sans font-bold uppercase tracking-widest text-xs text-red-500">The Guillotine</h4>
-                                        </div>
-                                        <p className="text-gray-400 text-xs italic mb-6">
-                                            Efficiency isn't about doing more. It's about stopping. These are your energy drains.
-                                        </p>
-                                        <div className="space-y-4">
-                                            {proData.the_guillotine.map((item, idx) => (
-                                                <div key={idx} className="border-l-2 border-red-500/50 pl-4 py-2">
-                                                    <div className="flex items-center justify-between mb-2">
-                                                        <span className="font-bold text-white">{item.target}</span>
-                                                        <span className={`text-xs font-bold px-2 py-1 rounded ${item.verdict === 'TERMINATE' ? 'bg-red-500/20 text-red-400' : 'bg-yellow-500/20 text-yellow-400'}`}>
-                                                            {item.verdict}
-                                                        </span>
-                                                    </div>
-                                                    <p className="text-gray-400 text-sm">{item.reason}</p>
-                                                </div>
-                                            ))}
+                                        <div className="font-mono text-sm text-red-400 bg-red-900/20 border border-red-900/30 p-8 rounded-sm leading-relaxed whitespace-pre-wrap">
+                                            {proData.riskAudit || proData.risk_audit}
                                         </div>
                                     </motion.div>
                                 )}
 
-                                {/* PRE-MORTEM RISKS */}
-                                {proData.pre_mortem_risks && proData.pre_mortem_risks.length > 0 && (
-                                    <motion.div
-                                        initial={{ opacity: 0, y: 20 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        transition={{ duration: 0.5, delay: 0.35 }}
-                                        className="dossier-card p-6"
-                                    >
-                                        <div className="flex items-center space-x-2 mb-4">
-                                            <span className="pulse-dot"></span>
-                                            <h4 className="font-sans font-bold uppercase tracking-widest text-xs text-tactical-amber">Pre-Mortem Analysis</h4>
-                                        </div>
-                                        <p className="text-gray-400 text-xs italic mb-6">
-                                            Assuming this plan fails, here's why it would happen.
-                                        </p>
-                                        <div className="space-y-4">
-                                            {proData.pre_mortem_risks.map((risk, idx) => (
-                                                <div key={idx} className="bg-zinc-800/50 p-4 rounded">
-                                                    <div className="flex items-center justify-between mb-2">
-                                                        <span className="font-bold text-white text-sm">{risk.risk}</span>
-                                                        <span className={`text-xs font-bold px-2 py-1 rounded ${risk.likelihood === 'High' ? 'bg-red-500/20 text-red-400' : 'bg-yellow-500/20 text-yellow-400'}`}>
-                                                            {risk.likelihood}
-                                                        </span>
-                                                    </div>
-                                                    <p className="text-gray-400 text-xs"><span className="text-tactical-amber">Mitigation:</span> {risk.mitigation}</p>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </motion.div>
-                                )}
-
-                                {/* IMMEDIATE PROTOCOLS */}
-                                {proData.immediate_protocols && proData.immediate_protocols.length > 0 && (
-                                    <motion.div
-                                        initial={{ opacity: 0, y: 20 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        transition={{ duration: 0.5, delay: 0.4 }}
-                                        className="dossier-card p-6"
-                                    >
-                                        <div className="flex items-center space-x-2 mb-4">
-                                            <span className="pulse-dot"></span>
-                                            <h4 className="font-sans font-bold uppercase tracking-widest text-xs text-tactical-amber">Immediate Protocols</h4>
-                                        </div>
-                                        <p className="text-gray-400 text-xs italic mb-6">
-                                            Ready-to-send action assets. Just copy and send.
-                                        </p>
-                                        <div className="space-y-4">
-                                            {proData.immediate_protocols.map((protocol, idx) => (
-                                                <div key={idx} className="bg-zinc-800/50 p-4 rounded">
-                                                    <div className="flex items-center justify-between mb-3">
-                                                        <div className="flex items-center space-x-2">
-                                                            <span className="text-sm">{protocol.platform === 'Email' ? '📧' : '💬'}</span>
-                                                            <span className="font-bold text-white text-sm">{protocol.title}</span>
-                                                        </div>
-                                                        <motion.button
-                                                            onClick={() => copyToClipboard(protocol.content, protocol.title)}
-                                                            className="text-xs text-tactical-amber hover:text-white transition-colors"
-                                                            whileTap={{ scale: 0.96 }}
-                                                        >
-                                                            Copy
-                                                        </motion.button>
-                                                    </div>
-                                                    <p className="text-gray-300 text-sm font-mono bg-zinc-900/50 p-3 rounded whitespace-pre-wrap">
-                                                        {protocol.content}
-                                                    </p>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </motion.div>
-                                )}
                             </div>
 
                             {/* Operationalize Section */}
                             <div className="mt-16 pt-12 border-t border-white/10">
                                 <h4 className="font-sans font-bold uppercase tracking-widest text-xs text-white/40 mb-8 text-center">Operationalize This Strategy</h4>
 
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="grid grid-cols-1 gap-6">
                                     <motion.button
                                         onClick={() => setShowEmail(!showEmail)}
                                         className={`p-6 border transition-all text-left group ${showEmail ? 'border-yellow-500 bg-yellow-500/5' : 'border-white/10 hover:border-yellow-500/30'}`}
@@ -416,69 +304,59 @@ const SynthesisResult = ({ text, analysis, languageName, onReset, isPro, onShowT
                                         </div>
                                         <p className="text-xs text-white/50 font-serif italic">Review the persuasively drafted communication for your stakeholders.</p>
                                     </motion.button>
-
-                                    <motion.button
-                                        onClick={() => setShowActionPlan(!showActionPlan)}
-                                        className={`p-6 border transition-all text-left group ${showActionPlan ? 'border-yellow-500 bg-yellow-500/5' : 'border-white/10 hover:border-yellow-500/30'}`}
-                                        whileTap={{ scale: 0.98 }}
-                                    >
-                                        <div className="flex justify-between items-center mb-2">
-                                            <span className="font-sans font-bold text-white text-[10px] uppercase tracking-widest">30-Day Action Plan</span>
-                                            <span className="text-xs opacity-40 group-hover:opacity-100 transition-opacity">{showActionPlan ? '−' : '+'}</span>
-                                        </div>
-                                        <p className="text-xs text-white/50 font-serif italic">Operationalize the roadmap with specific owners and milestones.</p>
-                                    </motion.button>
                                 </div>
 
                                 {/* Collapsible Content */}
                                 <div className="mt-8 space-y-6">
-                                    {showEmail && (proData.execution_assets?.email_draft || proData.email_draft) && (
+                                    {showEmail && (proData.emailDraft || proData.email_draft) && (
                                         <motion.div
                                             initial={{ opacity: 0, y: -10 }}
                                             animate={{ opacity: 1, y: 0 }}
                                             className="border border-yellow-500/20 p-8 bg-gray-800 rounded-lg"
                                         >
                                             {(() => {
-                                                const email = proData.execution_assets?.email_draft || proData.email_draft;
+                                                const rawEmail = proData.emailDraft || proData.email_draft;
+                                                let subject = "No Subject";
+                                                let body = "";
+
+                                                if (typeof rawEmail === 'string') {
+                                                    // New simple string format
+                                                    const parts = rawEmail.split('\n\n');
+                                                    if (parts.length > 0) {
+                                                        const subjectPart = parts[0];
+                                                        const bodyParts = parts.slice(1);
+
+                                                        // Robustly handle "SUBJECT: " prefix
+                                                        subject = subjectPart.replace(/^SUBJECT:\s*/i, '');
+                                                        body = bodyParts.join('\n\n');
+                                                    } else {
+                                                        body = rawEmail;
+                                                    }
+                                                } else if (rawEmail && typeof rawEmail === 'object') {
+                                                    // Legacy object format fallback
+                                                    subject = rawEmail.subject;
+                                                    body = rawEmail.body;
+                                                }
+
                                                 return (
                                                     <>
                                                         <div className="flex justify-between items-baseline mb-6 border-b border-white/5 pb-4">
                                                             <h5 className="font-sans font-bold text-white text-[10px] uppercase tracking-widest">Drafted Communication</h5>
-                                                            <button onClick={() => setShowEmail(false)} className="text-[10px] text-white/40 hover:text-white">Close</button>
+                                                            <div className="flex space-x-4">
+                                                                <button
+                                                                    onClick={() => copyToClipboard(rawEmail.body || rawEmail, "Email Draft")}
+                                                                    className="text-[10px] text-tactical-amber hover:text-white uppercase tracking-widest"
+                                                                >
+                                                                    Copy
+                                                                </button>
+                                                                <button onClick={() => setShowEmail(false)} className="text-[10px] text-white/40 hover:text-white uppercase tracking-widest">Close</button>
+                                                            </div>
                                                         </div>
                                                         <div className="space-y-4">
                                                             <p className="text-[10px] uppercase tracking-widest text-white/40">Subject</p>
-                                                            <p className="font-sans font-bold text-white text-lg">{email.subject}</p>
+                                                            <p className="font-sans font-bold text-white text-lg">{subject}</p>
                                                             <p className="text-[10px] uppercase tracking-widest text-white/40 mt-6">Message Body</p>
-                                                            <p className="text-white/80 text-base whitespace-pre-wrap leading-relaxed font-serif italic">{email.body}</p>
-                                                        </div>
-                                                    </>
-                                                );
-                                            })()}
-                                        </motion.div>
-                                    )}
-
-                                    {showActionPlan && (proData.execution_assets?.action_plan || proData.action_plan) && (
-                                        <motion.div
-                                            initial={{ opacity: 0, y: -10 }}
-                                            animate={{ opacity: 1, y: 0 }}
-                                            className="border border-yellow-500/20 p-8 bg-gray-800 rounded-lg"
-                                        >
-                                            {(() => {
-                                                const roadmap = proData.execution_assets?.action_plan || proData.action_plan;
-                                                return (
-                                                    <>
-                                                        <div className="flex justify-between items-baseline mb-8 border-b border-white/5 pb-4">
-                                                            <h5 className="font-sans font-bold text-white text-[10px] uppercase tracking-widest">Strategic Roadmap</h5>
-                                                            <button onClick={() => setShowActionPlan(false)} className="text-[10px] text-white/40 hover:text-white">Close</button>
-                                                        </div>
-                                                        <div className="space-y-6">
-                                                            {roadmap.map((item, idx) => (
-                                                                <div key={idx} className="flex items-start space-x-4 border-b border-white/5 pb-4 last:border-0">
-                                                                    <span className="font-sans font-bold text-yellow-500 text-[10px] w-8">0{idx + 1}</span>
-                                                                    <span className="text-sm text-white/90 font-sans leading-relaxed pt-0.5">{item}</span>
-                                                                </div>
-                                                            ))}
+                                                            <p className="text-white/80 text-base whitespace-pre-wrap leading-relaxed font-serif italic">{body}</p>
                                                         </div>
                                                     </>
                                                 );
