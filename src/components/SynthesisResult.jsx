@@ -47,7 +47,7 @@ const SynthesisResult = ({ text, analysis, languageName, onReset, isPro, onShowT
         setLoading(true);
         setError(null);
         try {
-            const result = await generateExecutiveSuite(text, analysis, languageName, false, 'scribe', isPro);
+            const result = await generateExecutiveSuite(text, analysis, languageName, false, isPro ? 'strategist' : 'scribe', isPro);
             // Result is the data object directly
             setData(result);
         } catch (err) {

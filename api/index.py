@@ -39,7 +39,6 @@ def ping():
 
 # --- STEP 1: THE SCRIBE (Audio -> Core Thesis) ---
 @app.post("/api/transmute")
-@app.post("/transmute")
 async def transmute_handler(file: UploadFile = File(...)):
     try:
         logger.info(f"Scribe receiving audio: {file.filename}")
