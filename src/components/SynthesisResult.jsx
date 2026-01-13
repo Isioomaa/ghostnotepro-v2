@@ -47,11 +47,18 @@ const SynthesisResult = ({ text, analysis, languageName, onReset, isPro, onShowT
         setLoading(true);
         setError(null);
         try {
+            console.log('🚀 Starting generation...');
             const result = await generateExecutiveSuite(text, analysis, languageName, false, isPro ? 'strategist' : 'scribe', isPro);
+
+            console.log('📦 Received API response:', result);
+            console.log('📦 Mode:', isPro ? 'strategist' : 'scribe');
+
             // Result is the data object directly
             setData(result);
+
+            console.log('✅ State updated with data:', result);
         } catch (err) {
-            console.error(err);
+            console.error('❌ Generation failed:', err);
             setError(localT.messages?.transmutation_fail || "The transmuter encountered an error.");
         } finally {
             setLoading(false);
@@ -163,8 +170,11 @@ const SynthesisResult = ({ text, analysis, languageName, onReset, isPro, onShowT
     const getTabContent = (id) => {
         if (!data) return "Initializing...";
 
+        // Robust check for data existence
+        // Scribe data usually has core_thesis
+        // Strategist data has judgment (or executive_judgement as legacy fallback)
         const freeData = data.free_tier || (data.core_thesis ? data : null);
-        const proData = data.pro_tier || (data.executive_judgement ? data : null);
+        const proData = data.pro_tier || (data.judgment || data.executive_judgement ? data : null);
 
         if (id === 'scribe') {
             if (!freeData) return (
