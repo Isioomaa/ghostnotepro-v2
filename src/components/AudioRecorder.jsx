@@ -204,7 +204,7 @@ const AudioRecorder = ({ onUploadSuccess, t, languageName, isPro, initialAudio }
 
             if (response.data && response.data.core_thesis) {
                 // New JSON format
-                const { transcription, executive_state, core_thesis, strategic_pillars } = response.data;
+                const { transcription, executive_state, core_thesis, strategic_pillars, tactical_steps } = response.data;
 
                 textValue = transcription || "";
 
@@ -229,8 +229,9 @@ const AudioRecorder = ({ onUploadSuccess, t, languageName, isPro, initialAudio }
                         executive_state: executive_state || "Reflective"
                     },
                     content: {
-                        core_thesis: response.data.core_thesis,
-                        strategic_pillars: response.data.strategic_pillars
+                        core_thesis: core_thesis,
+                        strategic_pillars: strategic_pillars,
+                        tactical_steps: tactical_steps
                     }
                 };
             } else if (typeof response === 'string') {

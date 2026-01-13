@@ -97,6 +97,8 @@ const SynthesisResult = ({ text, analysis, languageName, currentLang, t, onReset
                 strategistError = strategistResult.reason?.message || "Strategist generation failed.";
             }
 
+            console.log('✅ Final Combined Data:', combinedResult);
+
             if (Object.keys(combinedResult).length === 0) {
                 throw new Error("Both generation modes failed. Please try again.");
             }
@@ -571,10 +573,13 @@ const SynthesisResult = ({ text, analysis, languageName, currentLang, t, onReset
 
         if (activeTab === 'scribe' && freeData) {
             const pillarsText = (freeData.strategic_pillars || []).map(p => `${p.title}\n${p.rich_description || p.description}`).join('\n\n');
-            return `${localT.scribe?.title}: ${freeData.core_thesis}\n\n${localT.scribe?.strategic_pillars}:\n${pillarsText}\n\n${localT.scribe?.tactical_steps}:\n${(freeData.tactical_steps || []).map(s => `- ${s}`).join('\n')}`;
+            const tacticalText = (freeData.tactical_steps || []).map(s => `- ${s}`).join('\n');
+            return `${localT.scribe?.title || "CORE THESIS"}: ${freeData.core_thesis}\n\n${localT.scribe?.strategic_pillars || "STRATEGIC PILLARS"}:\n${pillarsText}\n\n${localT.scribe?.tactical_steps || "TACTICAL STEPS"}:\n${tacticalText}`;
         }
         if (activeTab === 'strategist' && isPro && proData) {
-            return `${localT.strategist?.judgment}: ${proData.executive_judgement || proData.judgment}\n\n${localT.strategist?.risk_audit}: ${proData.risk_audit || proData.riskAudit}`;
+            const judgment = proData.judgment || proData.executive_judgement || "No judgment available";
+            const riskAudit = proData.riskAudit || proData.risk_audit || "No risk audit available";
+            return `${localT.strategist?.judgment || "JUDGMENT"}: ${judgment}\n\n${localT.strategist?.risk_audit || "RISK AUDIT"}: ${riskAudit}`;
         }
         return "";
     };

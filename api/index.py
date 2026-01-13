@@ -97,7 +97,7 @@ async def transmute_handler(file: UploadFile = File(...)):
 
         # 2. GENERATE (Inline approach - NO FILE UPLOAD)
         response = client.models.generate_content(
-            model="gemini-2.5-flash",
+            model="gemini-1.5-flash",
             config=types.GenerateContentConfig(
                 safety_settings=[
                     types.SafetySetting(category="HARM_CATEGORY_HATE_SPEECH", threshold="BLOCK_NONE"),
@@ -287,6 +287,8 @@ async def generate_post_handler(request: GenerateRequest):
 
             No markdown. No bolding. No preamble. Pure intelligence.
             """
+        
+        logger.info(f"Triggering Gemini for mode: {request.mode}")
 
         # Generate with Gemini
         response = client.models.generate_content(
