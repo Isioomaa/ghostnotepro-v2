@@ -74,17 +74,31 @@ const SynthesisResult = ({ text, analysis, languageName, currentLang, t, onReset
                 ? generateExecutiveSuite(editableText, analysis, languageName, 'strategist', isPro, industry)
                 : Promise.resolve({});
 
-            const [scribeData, strategistData] = await Promise.all([scribePromise, strategistPromise]);
+            const results = await Promise.allSettled([scribePromise, strategistPromise]);
 
-            console.log('📦 Scribe Data:', scribeData);
-            console.log('📦 Strategist Data:', strategistData);
+            const scribeResult = results[0];
+            const strategistResult = results[1];
 
-            // Merge results
-            const combinedResult = { ...scribeData, ...strategistData };
+            let combinedResult = {};
 
-            console.log('✅ Combined Data:', combinedResult);
+            if (scribeResult.status === 'fulfilled' && scribeResult.value) {
+                combinedResult = { ...combinedResult, ...scribeResult.value };
+                console.log('✅ Scribe fulfilled');
+            } else if (scribeResult.status === 'rejected') {
+                console.error('❌ Scribe failed:', scribeResult.reason);
+            }
 
-            // Result is the data object directly
+            if (strategistResult.status === 'fulfilled' && strategistResult.value) {
+                combinedResult = { ...combinedResult, ...strategistResult.value };
+                console.log('✅ Strategist fulfilled');
+            } else if (strategistResult.status === 'rejected') {
+                console.error('❌ Strategist failed:', strategistResult.reason);
+            }
+
+            if (Object.keys(combinedResult).length === 0) {
+                throw new Error("Both generation modes failed. Please try again.");
+            }
+
             setData(combinedResult);
 
             // Auto-update draft if we have an active draft ID

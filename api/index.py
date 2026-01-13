@@ -97,7 +97,15 @@ async def transmute_handler(file: UploadFile = File(...)):
 
         # 2. GENERATE (Inline approach - NO FILE UPLOAD)
         response = client.models.generate_content(
-            model="gemini-2.5-flash",
+            model="gemini-1.5-flash",
+            config=types.GenerateContentConfig(
+                safety_settings=[
+                    types.SafetySetting(category="HATE_SPEECH", threshold="BLOCK_NONE"),
+                    types.SafetySetting(category="HARASSMENT", threshold="BLOCK_NONE"),
+                    types.SafetySetting(category="SEXUALLY_EXPLICIT", threshold="BLOCK_NONE"),
+                    types.SafetySetting(category="DANGEROUS_CONTENT", threshold="BLOCK_NONE"),
+                ]
+            ),
             contents=[
                 types.Part.from_bytes(data=audio_bytes, mime_type=mime_type),
                 """You are an elite Chief of Staff serving global C-suite executives. Your executives operate across borders and speak multiple languages. They need strategic clarity in English, regardless of input language.
@@ -189,8 +197,16 @@ CRITICAL: The output quality should be IDENTICAL whether the executive speaks in
 def clean_and_parse_json(text: str):
     """Robust helper to extract JSON from Gemini's response."""
     try:
-        # Remove markdown code blocks if present
-        json_str = re.sub(r'```json\s?|\s?```', '', text).strip()
+        # Remove markdown code blocks and any trailing/leading whitespace/newlines
+        json_str = re.sub(r'```json\s*|\s*```', '', text, flags=re.MULTILINE).strip()
+        
+        # If there's preamble text before the first '{', strip it
+        start_idx = json_str.find('{')
+        end_idx = json_str.rfind('}')
+        
+        if start_idx != -1 and end_idx != -1:
+            json_str = json_str[start_idx:end_idx + 1]
+            
         return json.loads(json_str)
     except Exception as e:
         logger.error(f"JSON Parsing Error: {str(e)} | Raw: {text}")
@@ -325,6 +341,14 @@ async def generate_post_handler(request: GenerateRequest):
         # Generate with Gemini
         response = client.models.generate_content(
             model="gemini-1.5-flash",
+            config=types.GenerateContentConfig(
+                safety_settings=[
+                    types.SafetySetting(category="HATE_SPEECH", threshold="BLOCK_NONE"),
+                    types.SafetySetting(category="HARASSMENT", threshold="BLOCK_NONE"),
+                    types.SafetySetting(category="SEXUALLY_EXPLICIT", threshold="BLOCK_NONE"),
+                    types.SafetySetting(category="DANGEROUS_CONTENT", threshold="BLOCK_NONE"),
+                ]
+            ),
             contents=prompt
         )
         
