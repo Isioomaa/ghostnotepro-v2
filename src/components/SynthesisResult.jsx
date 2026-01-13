@@ -29,7 +29,7 @@ const SkeletonDashboard = () => (
     </div>
 );
 
-const SynthesisResult = ({ text, analysis, languageName, currentLang, t, onReset, isPro, onShowToast, initialData, draftId, onEdit }) => {
+const SynthesisResult = ({ text, analysis, languageName, currentLang, t, onReset, isPro, onShowToast, initialData, draftId, onEdit, industry }) => {
     const [data, setData] = useState(null);
     const [sessionId, setSessionId] = useState(null); // Kept for future use
     const [loading, setLoading] = useState(false);
@@ -68,11 +68,11 @@ const SynthesisResult = ({ text, analysis, languageName, currentLang, t, onReset
             console.log('🚀 Starting generation...');
 
             // Always generate Scribe content (base layer) using edited text
-            const scribePromise = generateExecutiveSuite(editableText, analysis, languageName, false, 'scribe', isPro);
+            const scribePromise = generateExecutiveSuite(editableText, analysis, languageName, false, 'scribe', isPro, industry);
 
             // If Pro, also generate Strategist content
             const strategistPromise = isPro
-                ? generateExecutiveSuite(editableText, analysis, languageName, false, 'strategist', isPro)
+                ? generateExecutiveSuite(editableText, analysis, languageName, false, 'strategist', isPro, industry)
                 : Promise.resolve({});
 
             const [scribeData, strategistData] = await Promise.all([scribePromise, strategistPromise]);
@@ -148,7 +148,14 @@ const SynthesisResult = ({ text, analysis, languageName, currentLang, t, onReset
                 {/* Transcription */}
                 <div className="text-center px-4 max-w-2xl mx-auto">
                     <div className="flex justify-between items-center mb-4">
-                        <p className="text-[#999] text-[10px] uppercase tracking-[0.3em]">{localT.scribe?.transcription || "TRANSCRIPTION"}</p>
+                        <div className="flex flex-col items-start">
+                            <p className="text-[#999] text-[10px] uppercase tracking-[0.3em]">{localT.scribe?.transcription || "TRANSCRIPTION"}</p>
+                            {industry && (
+                                <span className="text-tactical-amber text-[9px] font-bold uppercase tracking-widest mt-1 px-2 py-0.5 bg-tactical-amber/10 border border-tactical-amber/30 rounded-full">
+                                    Specializing in {industry}
+                                </span>
+                            )}
+                        </div>
                         {!isEditing && (
                             <button
                                 onClick={() => setIsEditing(true)}

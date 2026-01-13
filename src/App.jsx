@@ -27,6 +27,7 @@ function MainApp() {
   const [activeModal, setActiveModal] = useState(null); // 'drafts', 'history', null
   const [initialResultData, setInitialResultData] = useState(null); // For loading drafts
   const [currentDraftId, setCurrentDraftId] = useState(null); // Track active draft ID
+  const [industry, setIndustry] = useState(null); // Detected industry context
 
   // Reactive Pro Status
   useEffect(() => {
@@ -52,6 +53,10 @@ function MainApp() {
     // Store content if provided separately (for Scribe view)
     if (analysisData && analysisData.content) {
       setInitialResultData(analysisData.content);
+    }
+
+    if (analysisData && analysisData.industry) {
+      setIndustry(analysisData.industry);
     }
 
     try {
@@ -87,6 +92,7 @@ function MainApp() {
     setAnalysis(null);
     setInitialResultData(null);
     setCurrentDraftId(null);
+    setIndustry(null);
   };
 
   const showCustomToast = (msg) => {
@@ -180,6 +186,7 @@ function MainApp() {
               initialData={initialResultData}
               draftId={currentDraftId}
               onEdit={(newText) => setTranscription(newText)}
+              industry={industry}
             />
           </main>
         )}

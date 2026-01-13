@@ -15,6 +15,52 @@ logger = logging.getLogger(__name__)
 
 app = FastAPI()
 
+# Industry Detection & Glossaries
+INDUSTRY_KEYWORDS = {
+    "Restaurant": ["restaurant", "dining", "menu", "customers", "tables", "kitchen", "chef", "food", "beverage", "hospitality", "covers", "orders"],
+    "Sales/B2B": ["sales", "pipeline", "leads", "quota", "deal", "prospect", "crm", "revenue", "enterprise", "saas", "client", "upsell"],
+    "Healthcare": ["patient", "diagnosis", "clinical", "hospital", "doctor", "medical", "treatment", "health", "insurance", "pharmaceutical"],
+    "Education": ["student", "curriculum", "grades", "teacher", "school", "university", "learning", "classroom", "academic"],
+    "Finance": ["finance", "investment", "portfolio", "asset", "trading", "equity", "market", "capital", "banking", "fiscal"]
+}
+
+INDUSTRY_GLOSSARIES = {
+    "Restaurant": {
+        "AV years": "AVS (Average Transaction Value)",
+        "AVS": "Average Transaction Value",
+        "P and L": "P&L (Profit & Loss)",
+        "P&L": "Profit & Loss",
+        "cogs": "CoGS (Cost of Goods Sold)",
+        "covers": "customer count/table turns"
+    },
+    "Sales/B2B": {
+        "acv": "ACV (Annual Contract Value)",
+        "ltv": "LTV (Lifetime Value)",
+        "cac": "CAC (Customer Acquisition Cost)",
+        "sql": "SQL (Sales Qualified Lead)",
+        "mql": "MQL (Marketing Qualified Lead)"
+    }
+}
+
+def detect_industry(text: str) -> str:
+    text_lower = text.lower()
+    for industry, keywords in INDUSTRY_KEYWORDS.items():
+        if any(keyword in text_lower for keyword in keywords):
+            return industry
+    return "General Business"
+
+def apply_glossary_corrections(text: str, industry: str) -> str:
+    if industry not in INDUSTRY_GLOSSARIES:
+        return text
+    
+    glossary = INDUSTRY_GLOSSARIES[industry]
+    corrected_text = text
+    for error, correction in glossary.items():
+        # Case insensitive replacement for whole words or specific patterns
+        pattern = re.compile(re.escape(error), re.IGNORECASE)
+        corrected_text = pattern.sub(correction, corrected_text)
+    return corrected_text
+
 # CORS Setup
 app.add_middleware(
     CORSMiddleware,
@@ -32,6 +78,7 @@ class GenerateRequest(BaseModel):
     text: str
     mode: Literal["scribe", "strategist"]
     isPro: bool = False
+    industry: str = None
 
 @app.get("/api/ping")
 def ping():
@@ -124,6 +171,15 @@ CRITICAL: The output quality should be IDENTICAL whether the executive speaks in
         )
         
         parsed_response = clean_and_parse_json(response.text)
+        
+        # 3. DETECT INDUSTRY & APPLY CORRECTIONS
+        transcription = parsed_response.get("transcription", "")
+        industry = detect_industry(transcription)
+        corrected_transcription = apply_glossary_corrections(transcription, industry)
+        
+        parsed_response["transcription"] = corrected_transcription
+        parsed_response["industry"] = industry
+        
         return {"status": "success", "data": parsed_response}
 
     except Exception as e:
@@ -156,12 +212,25 @@ async def generate_post_handler(request: GenerateRequest):
         if request.mode == "strategist" and not request.isPro:
             raise HTTPException(status_code=403, detail="Strategist mode requires a Pro subscription.")
 
+        industry_context = ""
+        if request.industry and request.industry != "General Business":
+            glossary = INDUSTRY_GLOSSARIES.get(request.industry, {})
+            glossary_str = "\n".join([f"- {k}: {v}" for k, v in glossary.items()])
+            industry_context = f"""
+            You are specializing in the {request.industry} industry. 
+            Common terminology and context for this industry:
+            {glossary_str}
+            
+            When analyzing the transcription, interpret technical terms and abbreviations through the lens of the {request.industry} sector.
+            """
+
         if request.mode == "scribe":
             prompt = f"""
-            Format this transcription into a Wall Street Journal style article with:
-            1) Core Thesis (main argument)
-            2) Pillars (3-5 supporting points, each with a title and description)
-            3) Steps (actionable items)
+            {industry_context}
+            Format this transcription into a Wall Street Journal style strategic brief with:
+            1) Core Thesis (main strategic argument)
+            2) Pillars (3-5 supporting strategic points, each with a title and deep-dive description)
+            3) Tactical Steps (actionable execution items)
 
             Text: {request.text}
 
@@ -174,7 +243,9 @@ async def generate_post_handler(request: GenerateRequest):
             """
         else: # strategist
             prompt = f"""
-            You are an elite Chief of Staff to C-suite executives - the best in the world. You hold advanced degrees (MBA, JD, or equivalent), have worked at McKinsey/BCG/Bain, and have been Chief of Staff to Fortune 500 CEOs. You think 3-5 chess moves ahead. You see what others miss. You are trusted with the most sensitive strategic decisions.
+            {industry_context}
+            You are an elite Chief of Staff to C-suite executives specializing in {request.industry if request.industry else 'global business'}. You hold advanced degrees (MBA, JD, or equivalent), have worked at McKinsey/BCG/Bain, and have been Chief of Staff to Fortune 500 CEOs. You think 3-5 chess moves ahead. You see what others miss.
+ You are trusted with the most sensitive strategic decisions.
 
             Your executive just voice-recorded their thoughts. Your job: turn chaos into clarity, rambling into strategy.
 

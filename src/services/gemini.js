@@ -48,7 +48,7 @@ export const transmuteAudio = async (audioBlob, language) => {
     }
 };
 
-export const generateExecutiveSuite = async (text, analysis, language, variation = false, mode = 'scribe', isPro = false) => {
+export const generateExecutiveSuite = async (text, analysis, language, variation = false, mode = 'scribe', isPro = false, industry = null) => {
     // Note: analysis, language, variation might be unused in backend but keeping signature compatible if needed, 
     // or we can clean up. The backend only uses `text`, `mode`, `isPro`.
 
@@ -61,7 +61,8 @@ export const generateExecutiveSuite = async (text, analysis, language, variation
             body: JSON.stringify({
                 text,
                 mode,
-                isPro
+                isPro,
+                industry
             })
         });
 
