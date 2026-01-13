@@ -2,7 +2,7 @@ import React from 'react';
 import AudioRecorder from './AudioRecorder';
 import { getLanguageName } from '../constants/languages';
 
-const LandingPage = ({ onUploadSuccess, t, currentLang, isPro }) => {
+const LandingPage = ({ onUploadSuccess, t, currentLang, isPro, initialAudio }) => {
     return (
         <section className="text-center mb-12 fade-in">
             <h1 className="font-playfair font-bold text-4xl leading-tight md:text-5xl md:leading-tight lg:text-7xl lg:leading-tight mb-6 tracking-tight">
@@ -19,6 +19,7 @@ const LandingPage = ({ onUploadSuccess, t, currentLang, isPro }) => {
                     t={t}
                     languageName={getLanguageName(currentLang)}
                     isPro={isPro}
+                    initialAudio={initialAudio}
                 />
             </div>
 

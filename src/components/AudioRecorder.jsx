@@ -9,7 +9,7 @@ const PLATFORMS = [
     { id: 'linkedin', name: 'LinkedIn' },
 ];
 
-const AudioRecorder = ({ onUploadSuccess, t, languageName, isPro }) => {
+const AudioRecorder = ({ onUploadSuccess, t, languageName, isPro, initialAudio }) => {
     // Robust Boolean Check (Handles String/Boolean from Props)
     const isProActive = String(isPro) === 'true' || isPro === true;
 
@@ -54,6 +54,35 @@ const AudioRecorder = ({ onUploadSuccess, t, languageName, isPro }) => {
             return () => clearInterval(interval);
         }
     }, [loading]); // SYNTHESIS_STEPS dependency omitted to avoid reset loop, it effectively updates if t changes but loading is typically short.
+
+    // Initialize from initialAudio prop (Bug 1 Fix)
+    useEffect(() => {
+        if (initialAudio) {
+            if (typeof initialAudio === 'string' && initialAudio.startsWith('data:audio/')) {
+                // It's base64
+                fetch(initialAudio)
+                    .then(res => res.blob())
+                    .then(blob => {
+                        const restoredFile = new File([blob], 'recording.webm', { type: 'audio/webm' });
+                        setFile(restoredFile);
+                        setAudioBlob(null);
+                        setError(null);
+                    })
+                    .catch(err => {
+                        console.error("Failed to restore audio from draft:", err);
+                        setError("Failed to restore audio from draft.");
+                    });
+            } else if (initialAudio instanceof File || initialAudio instanceof Blob) {
+                if (initialAudio instanceof File) {
+                    setFile(initialAudio);
+                    setAudioBlob(null);
+                } else {
+                    setAudioBlob(initialAudio);
+                    setFile(null);
+                }
+            }
+        }
+    }, [initialAudio]);
 
     // Dramatic pause for transmute button (700ms delay)
     useEffect(() => {
@@ -403,27 +432,42 @@ const AudioRecorder = ({ onUploadSuccess, t, languageName, isPro }) => {
                             const audioData = audioBlob || file;
                             if (!audioData) return;
 
-                            const newDraft = {
-                                id: Date.now(),
-                                title: file ? file.name : `Voice Note ${new Date().toLocaleTimeString()}`,
-                                transcript: "Audio recording saved as draft. Transmute to see insights.",
-                                tag: "💭 Brain Dump",
-                                created_at: new Date().toISOString()
+                            setSavingDraft(true);
+
+                            const save = async () => {
+                                try {
+                                    // Convert audio to base64 for storage
+                                    const audioBase64 = await new Promise((resolve) => {
+                                        const reader = new FileReader();
+                                        reader.onloadend = () => resolve(reader.result);
+                                        reader.readAsDataURL(audioData);
+                                    });
+
+                                    const newDraft = {
+                                        id: Date.now(),
+                                        title: file ? file.name : `Voice Note ${new Date().toLocaleTimeString()}`,
+                                        transcript: "Audio recording saved as draft. Transmute to see insights.",
+                                        tag: "💭 Brain Dump",
+                                        created_at: new Date().toISOString(),
+                                        audioData: audioBase64 // Persist audio!
+                                    };
+
+                                    const existing = JSON.parse(localStorage.getItem('ghostnote_drafts') || '[]');
+                                    const updated = [newDraft, ...existing];
+                                    localStorage.setItem('ghostnote_drafts', JSON.stringify(updated));
+
+                                    setAudioBlob(null);
+                                    setFile(null);
+                                    setRecordingTime(0);
+                                    alert(t.messages.draft_saved);
+                                } catch (err) {
+                                    console.error(err);
+                                    setError('Failed to save draft locally.');
+                                } finally {
+                                    setSavingDraft(false);
+                                }
                             };
-
-                            try {
-                                const existing = JSON.parse(localStorage.getItem('ghostnote_drafts') || '[]');
-                                const updated = [newDraft, ...existing];
-                                localStorage.setItem('ghostnote_drafts', JSON.stringify(updated));
-
-                                setAudioBlob(null);
-                                setFile(null);
-                                setRecordingTime(0);
-                                alert(t.messages.draft_saved);
-                            } catch (err) {
-                                console.error(err);
-                                setError('Failed to save draft locally.');
-                            }
+                            save();
                         }}
                         disabled={loading || savingDraft}
                         className="text-[10px] uppercase tracking-widest text-gray-500 hover:text-tactical-amber transition-colors flex items-center space-x-2"

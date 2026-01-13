@@ -157,6 +157,11 @@ Return ONLY valid JSON with this exact structure:
   "strategic_pillars": [
       {"title": "Bold Strategic Statement", "description": "1-2 sentences of analysis..."}
   ],
+  "tactical_steps": [
+    "Step 1: concrete actionable item",
+    "Step 2: concrete actionable item",
+    "Step 3: concrete actionable item"
+  ],
   "executive_state": "Reflective"
 }
 
@@ -248,7 +253,7 @@ async def generate_post_handler(request: GenerateRequest):
             Format this transcription into a Wall Street Journal style strategic brief with:
             1) Core Thesis (main strategic argument)
             2) Pillars (3-5 supporting strategic points, each with a title and deep-dive description)
-            3) Tactical Steps (actionable execution items)
+            3) Tactical Steps (3-5 concrete, actionable execution items)
 
             Text to analyze: {request.text}
 

@@ -27,6 +27,7 @@ function MainApp() {
   const [activeModal, setActiveModal] = useState(null); // 'drafts', 'history', null
   const [initialResultData, setInitialResultData] = useState(null); // For loading drafts
   const [currentDraftId, setCurrentDraftId] = useState(null); // Track active draft ID
+  const [initialAudio, setInitialAudio] = useState(null); // For loading audio from drafts
   const [industry, setIndustry] = useState(null); // Detected industry context
 
   // Reactive Pro Status
@@ -92,6 +93,7 @@ function MainApp() {
     setAnalysis(null);
     setInitialResultData(null);
     setCurrentDraftId(null);
+    setInitialAudio(null);
     setIndustry(null);
   };
 
@@ -168,6 +170,7 @@ function MainApp() {
             t={t}
             currentLang={currentLang}
             isPro={isPro}
+            initialAudio={initialAudio}
           />
         )}
 
@@ -232,6 +235,7 @@ function MainApp() {
             setTranscription(draft.transcript || draft.transcription);
             setAnalysis(draft.analysis || null);
             setInitialResultData(draft.content || null); // Pass persisted content if available
+            setInitialAudio(draft.audioData || null); // Pass persisted audio if available
             setCurrentDraftId(draft.id); // Set the active draft ID!
             setActiveModal(null);
           }}
