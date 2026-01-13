@@ -324,7 +324,7 @@ async def generate_post_handler(request: GenerateRequest):
 
         # Generate with Gemini
         response = client.models.generate_content(
-            model="gemini-2.5-flash",
+            model="gemini-1.5-flash",
             contents=prompt
         )
         

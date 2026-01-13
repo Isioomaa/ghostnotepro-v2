@@ -80,8 +80,10 @@ export const generateExecutiveSuite = async (text, analysis, language, mode = 's
 
         if (data.status === 'success' && data.content) {
             return data.content;
+        } else if (data.status === 'error') {
+            throw new Error(data.message || "The strategist failed to analyze this session.");
         } else {
-            // Fallback if structure is different
+            // Fallback for direct JSON responses
             return cleanAndParseJSON(data);
         }
 
