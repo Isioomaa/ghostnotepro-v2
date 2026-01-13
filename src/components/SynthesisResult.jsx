@@ -48,15 +48,27 @@ const SynthesisResult = ({ text, analysis, languageName, onReset, isPro, onShowT
         setError(null);
         try {
             console.log('🚀 Starting generation...');
-            const result = await generateExecutiveSuite(text, analysis, languageName, false, isPro ? 'strategist' : 'scribe', isPro);
 
-            console.log('📦 Received API response:', result);
-            console.log('📦 Mode:', isPro ? 'strategist' : 'scribe');
+            // Always generate Scribe content (base layer)
+            const scribePromise = generateExecutiveSuite(text, analysis, languageName, false, 'scribe', isPro);
+
+            // If Pro, also generate Strategist content
+            const strategistPromise = isPro
+                ? generateExecutiveSuite(text, analysis, languageName, false, 'strategist', isPro)
+                : Promise.resolve({});
+
+            const [scribeData, strategistData] = await Promise.all([scribePromise, strategistPromise]);
+
+            console.log('📦 Scribe Data:', scribeData);
+            console.log('📦 Strategist Data:', strategistData);
+
+            // Merge results
+            const combinedResult = { ...scribeData, ...strategistData };
+
+            console.log('✅ Combined Data:', combinedResult);
 
             // Result is the data object directly
-            setData(result);
-
-            console.log('✅ State updated with data:', result);
+            setData(combinedResult);
         } catch (err) {
             console.error('❌ Generation failed:', err);
             setError(localT.messages?.transmutation_fail || "The transmuter encountered an error.");
