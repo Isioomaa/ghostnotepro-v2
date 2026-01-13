@@ -1,8 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { FaCopy, FaCheck, FaShareAlt, FaSpinner, FaChevronDown, FaLock, FaEnvelope, FaListUl, FaShieldAlt } from 'react-icons/fa';
+import { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
+import { FaCopy, FaShareAlt, FaChevronDown, FaLock, FaListUl } from 'react-icons/fa';
 import { generateExecutiveSuite, updateDraft } from '../services/gemini';
-import { PRO_TIER_BENEFITS } from '../constants/tiers';
 import { TRANSLATIONS } from '../constants/languages';
 import ShareActions from './ShareActions';
 import PaywallModal from './PaywallModal';
@@ -68,11 +67,11 @@ const SynthesisResult = ({ text, analysis, languageName, currentLang, t, onReset
             console.log('🚀 Starting generation...');
 
             // Always generate Scribe content (base layer) using edited text
-            const scribePromise = generateExecutiveSuite(editableText, analysis, languageName, false, 'scribe', isPro, industry);
+            const scribePromise = generateExecutiveSuite(editableText, analysis, languageName, 'scribe', isPro, industry);
 
             // If Pro, also generate Strategist content
             const strategistPromise = isPro
-                ? generateExecutiveSuite(editableText, analysis, languageName, false, 'strategist', isPro, industry)
+                ? generateExecutiveSuite(editableText, analysis, languageName, 'strategist', isPro, industry)
                 : Promise.resolve({});
 
             const [scribeData, strategistData] = await Promise.all([scribePromise, strategistPromise]);

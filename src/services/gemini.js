@@ -48,8 +48,8 @@ export const transmuteAudio = async (audioBlob, language) => {
     }
 };
 
-export const generateExecutiveSuite = async (text, analysis, language, variation = false, mode = 'scribe', isPro = false, industry = null) => {
-    // Note: analysis, language, variation might be unused in backend but keeping signature compatible if needed, 
+export const generateExecutiveSuite = async (text, analysis, language, mode = 'scribe', isPro = false, industry = null) => {
+    // Note: analysis, language might be unused in backend but keeping signature compatible if needed, 
     // or we can clean up. The backend only uses `text`, `mode`, `isPro`.
 
     try {
@@ -91,7 +91,7 @@ export const generateExecutiveSuite = async (text, analysis, language, variation
     }
 };
 
-export const saveDraft = async (audioBlob, language) => {
+export const saveDraft = async () => {
     // Moved to LocalStorage in AudioRecorder.jsx directly
     return { status: 'success' };
 };
@@ -160,7 +160,7 @@ export const fetchDecisionHistory = async () => {
     }
 };
 
-export const auditDecision = async (decisionId, audioBlob, language) => {
+export const auditDecision = async (decisionId) => {
     // Since we can't easily record and analyze on backend WITHOUT a DB context for the original wager
     // We'll mock the audit result for now to keep the UI functional
     try {
