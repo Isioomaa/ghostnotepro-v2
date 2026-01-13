@@ -97,7 +97,7 @@ async def transmute_handler(file: UploadFile = File(...)):
 
         # 2. GENERATE (Inline approach - NO FILE UPLOAD)
         response = client.models.generate_content(
-            model="gemini-2.5-flash",
+            model="gemini-2.0-flash",
             config=types.GenerateContentConfig(
                 safety_settings=[
                     types.SafetySetting(category="HATE_SPEECH", threshold="BLOCK_NONE"),
@@ -191,8 +191,10 @@ CRITICAL: The output quality should be IDENTICAL whether the executive speaks in
         return {"status": "success", "data": parsed_response}
 
     except Exception as e:
-        logger.error(f"Scribe Error: {str(e)}")
-        return {"status": "error", "message": str(e)}
+        import traceback
+        error_details = traceback.format_exc()
+        logger.error(f"Scribe Error: {str(e)}\n{error_details}")
+        return {"status": "error", "message": str(e), "details": error_details}
 
 def clean_and_parse_json(text: str):
     """Robust helper to extract JSON from Gemini's response."""
@@ -340,7 +342,7 @@ async def generate_post_handler(request: GenerateRequest):
 
         # Generate with Gemini
         response = client.models.generate_content(
-            model="gemini-2.5-flash",
+            model="gemini-2.0-flash",
             config=types.GenerateContentConfig(
                 safety_settings=[
                     types.SafetySetting(category="HATE_SPEECH", threshold="BLOCK_NONE"),
@@ -364,5 +366,7 @@ async def generate_post_handler(request: GenerateRequest):
     except HTTPException as e:
         raise e
     except Exception as e:
-        logger.error(f"Generation Error: {str(e)}")
-        return {"status": "error", "message": str(e)}
+        import traceback
+        error_details = traceback.format_exc()
+        logger.error(f"Generation Error: {str(e)}\n{error_details}")
+        return {"status": "error", "message": str(e), "details": error_details}
