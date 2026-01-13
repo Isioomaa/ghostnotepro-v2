@@ -3,6 +3,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { FaCopy, FaCheck, FaShareAlt, FaSpinner, FaChevronDown, FaLock, FaEnvelope, FaListUl, FaShieldAlt } from 'react-icons/fa';
 import { generateExecutiveSuite, updateDraft } from '../services/gemini';
 import { PRO_TIER_BENEFITS } from '../constants/tiers';
+import { TRANSLATIONS } from '../constants/languages';
+import ShareActions from './ShareActions';
+import PaywallModal from './PaywallModal';
 
 // Skeleton Loader Component
 const SkeletonCard = () => (
@@ -41,6 +44,13 @@ const SynthesisResult = ({ text, analysis, languageName, onReset, isPro, onShowT
 
     // Default translation fallback
     const localT = t || TRANSLATIONS.EN;
+
+    // Initialize with initialData if provided (e.g. from a loaded draft)
+    useEffect(() => {
+        if (initialData) {
+            setData(initialData);
+        }
+    }, [initialData]);
 
     const handleGenerate = async () => {
         setLoading(true);

@@ -1,3 +1,6 @@
+import React, { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
+import { TRANSLATIONS } from '../constants/languages';
 import { deleteDraft } from '../services/gemini';
 
 const DraftsView = ({ onClose, t, onLoadDraft }) => {
