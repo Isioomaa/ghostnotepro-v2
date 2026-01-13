@@ -95,6 +95,35 @@ export const saveDraft = async (audioBlob, language) => {
     return { status: 'success' };
 };
 
+export const updateDraft = async (draftId, updates) => {
+    try {
+        const drafts = JSON.parse(localStorage.getItem(DRAFTS_KEY) || '[]');
+        const index = drafts.findIndex(d => d.id === draftId);
+
+        if (index !== -1) {
+            drafts[index] = { ...drafts[index], ...updates };
+            localStorage.setItem(DRAFTS_KEY, JSON.stringify(drafts));
+            return drafts[index];
+        }
+        return null;
+    } catch (e) {
+        console.error("Failed to update draft", e);
+        return null;
+    }
+};
+
+export const deleteDraft = async (draftId) => {
+    try {
+        const drafts = JSON.parse(localStorage.getItem(DRAFTS_KEY) || '[]');
+        const updated = drafts.filter(d => d.id !== draftId);
+        localStorage.setItem(DRAFTS_KEY, JSON.stringify(updated));
+        return true;
+    } catch (e) {
+        console.error("Failed to delete draft", e);
+        return false;
+    }
+};
+
 export const sealWager = async (sessionId, prediction, days) => {
     try {
         const history = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');

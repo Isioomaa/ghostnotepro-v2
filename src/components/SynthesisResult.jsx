@@ -1,9 +1,8 @@
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import ShareActions from './ShareActions';
-import PaywallModal from './PaywallModal';
-import { generateExecutiveSuite } from '../services/gemini';
-import { TRANSLATIONS } from '../constants/languages';
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { FaCopy, FaCheck, FaShareAlt, FaSpinner, FaChevronDown, FaLock, FaEnvelope, FaListUl, FaShieldAlt } from 'react-icons/fa';
+import { generateExecutiveSuite, updateDraft } from '../services/gemini';
+import { PRO_TIER_BENEFITS } from '../constants/tiers';
 
 // Skeleton Loader Component
 const SkeletonCard = () => (
@@ -27,7 +26,7 @@ const SkeletonDashboard = () => (
     </div>
 );
 
-const SynthesisResult = ({ text, analysis, languageName, onReset, isPro, onShowToast, t }) => {
+const SynthesisResult = ({ text, analysis, languageName, onReset, isPro, onShowToast, t, initialData, draftId }) => {
     const [data, setData] = useState(null);
     const [sessionId, setSessionId] = useState(null); // Kept for future use
     const [loading, setLoading] = useState(false);
@@ -69,6 +68,18 @@ const SynthesisResult = ({ text, analysis, languageName, onReset, isPro, onShowT
 
             // Result is the data object directly
             setData(combinedResult);
+
+            // Auto-update draft if we have an active draft ID
+            if (draftId) {
+                console.log(`💾 Auto-updating draft ${draftId} with generated content.`);
+                updateDraft(draftId, {
+                    content: combinedResult,
+                    // Update status to 'complete'? Or just let the presence of content define it.
+                    // We could add a 'last_updated' timestamp
+                    last_updated: new Date().toISOString()
+                });
+            }
+
         } catch (err) {
             console.error('❌ Generation failed:', err);
             setError(localT.messages?.transmutation_fail || "The transmuter encountered an error.");

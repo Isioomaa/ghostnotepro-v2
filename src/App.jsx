@@ -25,6 +25,8 @@ function MainApp() {
   const [toastMessage, setToastMessage] = useState("Link copied to clipboard");
   const [isPro, setIsPro] = useState(getInitialPro());
   const [activeModal, setActiveModal] = useState(null); // 'drafts', 'history', null
+  const [initialResultData, setInitialResultData] = useState(null); // For loading drafts
+  const [currentDraftId, setCurrentDraftId] = useState(null); // Track active draft ID
 
   // Reactive Pro Status
   useEffect(() => {
@@ -45,13 +47,11 @@ function MainApp() {
   const handleUploadSuccess = async (text, platforms, analysisData) => {
     if (!text) return;
     setTranscription(text);
+    setCurrentDraftId(null); // Reset draft ID on new upload/recording unless we explicitly save it there (which we don't yet in AudioRecorder directly to App)
 
     // Store content if provided separately (for Scribe view)
     if (analysisData && analysisData.content) {
-      // We might want to pass this to SynthesisResult too?
-      // SynthesisResult takes `text`. If we pass object, it expects keys.
-      // For now, let's keep `transcription` as text for display.
-      // And pass analysisData.audit as analysis.
+      setInitialResultData(analysisData.content);
     }
 
     try {
@@ -85,6 +85,8 @@ function MainApp() {
   const handleReset = () => {
     setTranscription(null);
     setAnalysis(null);
+    setInitialResultData(null);
+    setCurrentDraftId(null);
   };
 
   const showCustomToast = (msg) => {
@@ -175,6 +177,8 @@ function MainApp() {
               onReset={handleReset}
               isPro={isPro}
               onShowToast={showCustomToast}
+              initialData={initialResultData}
+              draftId={currentDraftId}
             />
           </main>
         )}
@@ -212,7 +216,19 @@ function MainApp() {
       </footer>
 
       {/* Modals */}
-      {activeModal === 'drafts' && <DraftsView onClose={() => setActiveModal(null)} t={t} />}
+      {activeModal === 'drafts' && (
+        <DraftsView
+          onClose={() => setActiveModal(null)}
+          t={t}
+          onLoadDraft={(draft) => {
+            setTranscription(draft.transcript || draft.transcription);
+            setAnalysis(draft.analysis || null);
+            setInitialResultData(draft.content || null); // Pass persisted content if available
+            setCurrentDraftId(draft.id); // Set the active draft ID!
+            setActiveModal(null);
+          }}
+        />
+      )}
       {activeModal === 'history' && (
         <TheLoopDashboard
           onClose={() => setActiveModal(null)}
