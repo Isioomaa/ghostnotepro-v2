@@ -97,13 +97,13 @@ async def transmute_handler(file: UploadFile = File(...)):
 
         # 2. GENERATE (Inline approach - NO FILE UPLOAD)
         response = client.models.generate_content(
-            model="gemini-2.0-flash",
+            model="gemini-2.5-flash",
             config=types.GenerateContentConfig(
                 safety_settings=[
-                    types.SafetySetting(category="HATE_SPEECH", threshold="BLOCK_NONE"),
-                    types.SafetySetting(category="HARASSMENT", threshold="BLOCK_NONE"),
-                    types.SafetySetting(category="SEXUALLY_EXPLICIT", threshold="BLOCK_NONE"),
-                    types.SafetySetting(category="DANGEROUS_CONTENT", threshold="BLOCK_NONE"),
+                    types.SafetySetting(category="HARM_CATEGORY_HATE_SPEECH", threshold="BLOCK_NONE"),
+                    types.SafetySetting(category="HARM_CATEGORY_HARASSMENT", threshold="BLOCK_NONE"),
+                    types.SafetySetting(category="HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold="BLOCK_NONE"),
+                    types.SafetySetting(category="HARM_CATEGORY_DANGEROUS_CONTENT", threshold="BLOCK_NONE"),
                 ]
             ),
             contents=[
@@ -342,13 +342,13 @@ async def generate_post_handler(request: GenerateRequest):
 
         # Generate with Gemini
         response = client.models.generate_content(
-            model="gemini-2.0-flash",
+            model="gemini-2.5-flash",
             config=types.GenerateContentConfig(
                 safety_settings=[
-                    types.SafetySetting(category="HATE_SPEECH", threshold="BLOCK_NONE"),
-                    types.SafetySetting(category="HARASSMENT", threshold="BLOCK_NONE"),
-                    types.SafetySetting(category="SEXUALLY_EXPLICIT", threshold="BLOCK_NONE"),
-                    types.SafetySetting(category="DANGEROUS_CONTENT", threshold="BLOCK_NONE"),
+                    types.SafetySetting(category="HARM_CATEGORY_HATE_SPEECH", threshold="BLOCK_NONE"),
+                    types.SafetySetting(category="HARM_CATEGORY_HARASSMENT", threshold="BLOCK_NONE"),
+                    types.SafetySetting(category="HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold="BLOCK_NONE"),
+                    types.SafetySetting(category="HARM_CATEGORY_DANGEROUS_CONTENT", threshold="BLOCK_NONE"),
                 ]
             ),
             contents=prompt
