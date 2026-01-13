@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { HelmetProvider } from 'react-helmet-async';
 import Header from './components/Header';
@@ -12,7 +13,7 @@ import { analyzeText } from './utils/analysis';
 import { isPro as getInitialPro, PRO_STATUS_CHANGED_EVENT } from './utils/usageTracker';
 import { PrivacyPolicy, TermsOfService, RefundPolicy } from './components/LegalDocs';
 import LanguageSelector from './components/LanguageSelector';
-import { FaLinkedin, FaXTwitter, FaWhatsapp } from 'react-icons/fa6';
+import { FaLinkedin, FaXTwitter, FaWhatsapp, FaArrowLeft } from 'react-icons/fa6';
 import PaywallModal from './components/PaywallModal';
 
 function MainApp() {
@@ -162,6 +163,20 @@ function MainApp() {
       )}
 
       <div className="max-w-4xl mx-auto w-full px-4 md:px-6 py-8">
+
+        {/* Back Arrow for Navigation */}
+        {(transcription || currentDraftId) && (
+          <motion.button
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            onClick={handleReset}
+            className="flex items-center space-x-2 text-zinc-500 hover:text-tactical-amber transition-colors mb-6 group"
+            title="Back to Home"
+          >
+            <FaArrowLeft className="text-sm group-hover:-translate-x-1 transition-transform" />
+            <span className="text-[10px] uppercase tracking-widest font-bold">Back to Home</span>
+          </motion.button>
+        )}
 
         {/* Hero Section / Landing Page */}
         {!transcription && (
