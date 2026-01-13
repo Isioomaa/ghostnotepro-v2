@@ -250,94 +250,37 @@ async def generate_post_handler(request: GenerateRequest):
             2) Pillars (3-5 supporting strategic points, each with a title and deep-dive description)
             3) Tactical Steps (actionable execution items)
 
-            Text: {request.text}
+            Text to analyze: {request.text}
 
             Return ONLY a valid JSON object with keys: 
             - "core_thesis": string
             - "strategic_pillars": list of objects with "title" (string) and "description" (string)
             - "tactical_steps": list of strings
 
-            Do not include any conversational text or markdown bolding.
+            Direct output only. No markdown formatting.
             """
         else: # strategist
             prompt = f"""
             {industry_context}
-            You are an elite Chief of Staff to C-suite executives specializing in {request.industry if request.industry else 'global business'}. You hold advanced degrees (MBA, JD, or equivalent), have worked at McKinsey/BCG/Bain, and have been Chief of Staff to Fortune 500 CEOs. You think 3-5 chess moves ahead. You see what others miss.
- You are trusted with the most sensitive strategic decisions.
-
-            Your executive just voice-recorded their thoughts. Your job: turn chaos into clarity, rambling into strategy.
+            You are an elite Chief of Staff specializing in {request.industry if request.industry else 'global business'}. 
+            You think 3-5 chess moves ahead. You see what others miss.
 
             Analyze this transcription and provide THREE critical deliverables:
 
-            ═══════════════════════════════════════════════════════════
-
-            1) JUDGMENT (Chief of Staff Strategic Assessment)
-
-            You are in the room where it happens. What would you tell your executive privately?
-
-            - What is the REAL strategic challenge or opportunity here? (Not the surface issue)
-            - What are the second and third-order implications?
-            - What would a seasoned Chief of Staff flag immediately?
-            - What is the one move that changes the game?
-            - What's at stake if we get this wrong?
-
-            Be direct. Be insightful. Be the advisor executives wish they had.
-            150-250 words. No fluff.
-
-            ═══════════════════════════════════════════════════════════
-
-            2) RISK AUDIT (Recursive Risk Intelligence)
-
-            You've seen strategies fail. You know where bodies are buried. Audit this like your career depends on it.
-
-            - PRIMARY RISKS: What are the obvious operational, financial, and reputational risks?
-            - HIDDEN RISKS: What are the cascading, second-order risks most people won't see until it's too late?
-            - CAREER-ENDING RISKS: What could go catastrophically wrong? (Think: Enron, Theranos-level)
-            - MITIGATION PRIORITY: What must be de-risked first, this week?
-
-            Think like a Chief of Staff who has to brief the Board tomorrow.
-            150-250 words. Be brutally honest.
-
-            ═══════════════════════════════════════════════════════════
-
-            3) EMAIL DRAFT (Executive Communication - Ready to Send)
-
-            Draft an email your executive could send RIGHT NOW to their team, board, or key stakeholder.
-
-            CRITICAL: Format this as a complete, ready-to-send email with:
-
-            SUBJECT LINE: (Clear, professional, 5-8 words max)
-
-            BODY:
-            [Opening: Context in 1-2 sentences - why this matters now]
-
-            [Core: The strategy/decision/recommendation - what we're doing]
-
-            [Close: Next steps with owners and timelines - who does what by when]
-
-            REQUIREMENTS:
-            - TONE: Confident but not arrogant. Clear but sophisticated. Decisive but measured.
-            - LENGTH: 150-250 words total
-            - VOICE: This should sound like a seasoned executive wrote it, not an AI
-            - FORMATTING: Use paragraph breaks for readability, but NO markdown bolding or bullets
-
-            This email should be ready to copy-paste and send with zero editing.
-
-            ═══════════════════════════════════════════════════════════
+            1) JUDGMENT: What is the REAL strategic challenge here? (150-250 words)
+            2) RISK AUDIT: What are the primary and hidden risks? (150-250 words)
+            3) EMAIL DRAFT: A ready-to-send draft for stakeholders. Include "SUBJECT: " at the top.
 
             Text to analyze: {request.text}
 
-            Return ONLY valid JSON with this EXACT structure:
-
+            Return ONLY a valid JSON object with this EXACT structure:
             {{
-              "judgment": "your judgment text here",
-              "riskAudit": "your risk audit text here",
-              "emailDraft": "SUBJECT: Your subject line here\\n\\nYour email body with proper paragraph breaks here"
+              "judgment": "judgment text here",
+              "riskAudit": "risk audit text here",
+              "emailDraft": "SUBJECT: Subject line here\\n\\nEmail body here"
             }}
 
-            IMPORTANT: The emailDraft field should be a single string that includes both the subject line (prefixed with "SUBJECT: ") and the body separated by two newlines.
-
-            No additional markdown. No bolding. No preamble. Just world-class Chief of Staff intelligence.
+            No markdown. No bolding. No preamble. Pure intelligence.
             """
 
         # Generate with Gemini

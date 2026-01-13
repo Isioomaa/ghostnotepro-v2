@@ -80,6 +80,7 @@ const SynthesisResult = ({ text, analysis, languageName, currentLang, t, onReset
             const strategistResult = results[1];
 
             let combinedResult = {};
+            let strategistError = null;
 
             if (scribeResult.status === 'fulfilled' && scribeResult.value) {
                 combinedResult = { ...combinedResult, ...scribeResult.value };
@@ -93,6 +94,7 @@ const SynthesisResult = ({ text, analysis, languageName, currentLang, t, onReset
                 console.log('✅ Strategist fulfilled');
             } else if (strategistResult.status === 'rejected') {
                 console.error('❌ Strategist failed:', strategistResult.reason);
+                strategistError = strategistResult.reason?.message || "Strategist generation failed.";
             }
 
             if (Object.keys(combinedResult).length === 0) {
@@ -100,6 +102,7 @@ const SynthesisResult = ({ text, analysis, languageName, currentLang, t, onReset
             }
 
             setData(combinedResult);
+            if (strategistError) setError(strategistError);
 
             // Auto-update draft if we have an active draft ID
             if (draftId) {
