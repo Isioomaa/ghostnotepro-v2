@@ -179,6 +179,7 @@ function MainApp() {
               onShowToast={showCustomToast}
               initialData={initialResultData}
               draftId={currentDraftId}
+              onEdit={(newText) => setTranscription(newText)}
             />
           </main>
         )}

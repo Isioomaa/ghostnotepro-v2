@@ -29,7 +29,7 @@ const SkeletonDashboard = () => (
     </div>
 );
 
-const SynthesisResult = ({ text, analysis, languageName, onReset, isPro, onShowToast, t, initialData, draftId }) => {
+const SynthesisResult = ({ text, analysis, languageName, currentLang, t, onReset, isPro, onShowToast, initialData, draftId, onEdit }) => {
     const [data, setData] = useState(null);
     const [sessionId, setSessionId] = useState(null); // Kept for future use
     const [loading, setLoading] = useState(false);
@@ -42,6 +42,10 @@ const SynthesisResult = ({ text, analysis, languageName, onReset, isPro, onShowT
     const [wagerDays, setWagerDays] = useState(30);
     const [sealingWager, setSealingWager] = useState(false);
 
+    // Transcription Editing State
+    const [isEditing, setIsEditing] = useState(false);
+    const [editableText, setEditableText] = useState(text);
+
     // Default translation fallback
     const localT = t || TRANSLATIONS.EN;
 
@@ -52,18 +56,23 @@ const SynthesisResult = ({ text, analysis, languageName, onReset, isPro, onShowT
         }
     }, [initialData]);
 
+    // Update editableText if text prop changes (e.g. loading a draft)
+    useEffect(() => {
+        setEditableText(text);
+    }, [text]);
+
     const handleGenerate = async () => {
         setLoading(true);
         setError(null);
         try {
             console.log('🚀 Starting generation...');
 
-            // Always generate Scribe content (base layer)
-            const scribePromise = generateExecutiveSuite(text, analysis, languageName, false, 'scribe', isPro);
+            // Always generate Scribe content (base layer) using edited text
+            const scribePromise = generateExecutiveSuite(editableText, analysis, languageName, false, 'scribe', isPro);
 
             // If Pro, also generate Strategist content
             const strategistPromise = isPro
-                ? generateExecutiveSuite(text, analysis, languageName, false, 'strategist', isPro)
+                ? generateExecutiveSuite(editableText, analysis, languageName, false, 'strategist', isPro)
                 : Promise.resolve({});
 
             const [scribeData, strategistData] = await Promise.all([scribePromise, strategistPromise]);
@@ -137,13 +146,58 @@ const SynthesisResult = ({ text, analysis, languageName, onReset, isPro, onShowT
         return (
             <div className="space-y-8 md:space-y-12 transition-opacity duration-500 fade-in">
                 {/* Transcription */}
-                <div className="text-center px-4">
-                    <p className="text-[#999] text-xs uppercase tracking-widest mb-4">{localT.scribe?.transcription || "TRANSCRIPTION"}</p>
-                    <p className="text-[#F9F7F5] leading-relaxed max-w-lg mx-auto whitespace-pre-wrap text-sm md:text-base">{text}</p>
+                <div className="text-center px-4 max-w-2xl mx-auto">
+                    <div className="flex justify-between items-center mb-4">
+                        <p className="text-[#999] text-[10px] uppercase tracking-[0.3em]">{localT.scribe?.transcription || "TRANSCRIPTION"}</p>
+                        {!isEditing && (
+                            <button
+                                onClick={() => setIsEditing(true)}
+                                className="text-tactical-amber text-[10px] font-bold uppercase tracking-widest hover:text-white transition-colors flex items-center"
+                            >
+                                <span className="mr-2">✏️</span> {localT.buttons?.edit || "Edit Transcription"}
+                            </button>
+                        )}
+                    </div>
+
+                    {isEditing ? (
+                        <div className="space-y-4">
+                            <textarea
+                                value={editableText}
+                                onChange={(e) => setEditableText(e.target.value)}
+                                className="w-full h-48 bg-white/5 border border-tactical-amber/30 rounded-lg p-6 text-white text-sm md:text-base font-serif italic focus:border-tactical-amber outline-none transition-all resize-none shadow-inner"
+                                placeholder="Edit your raw thought..."
+                            />
+                            <div className="flex space-x-4">
+                                <button
+                                    onClick={() => {
+                                        setIsEditing(false);
+                                        if (onEdit) onEdit(editableText);
+                                        handleGenerate(); // User flow: Save & Generate
+                                    }}
+                                    className="flex-1 py-3 bg-tactical-amber text-black text-[10px] font-bold uppercase tracking-widest rounded-sm hover:bg-white transition-all"
+                                >
+                                    ✓ {localT.buttons?.save_generate || "Save & Generate"}
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        setEditableText(text);
+                                        setIsEditing(false);
+                                    }}
+                                    className="px-6 py-3 border border-white/10 text-gray-500 text-[10px] font-bold uppercase tracking-widest rounded-sm hover:text-white transition-all"
+                                >
+                                    {localT.buttons?.cancel || "Cancel"}
+                                </button>
+                            </div>
+                        </div>
+                    ) : (
+                        <p className="text-[#F9F7F5] leading-relaxed max-w-lg mx-auto whitespace-pre-wrap text-sm md:text-base font-serif italic border-l border-white/5 pl-6">
+                            "{editableText}"
+                        </p>
+                    )}
                 </div>
 
                 {/* Analysis / Emphasis Audit */}
-                {analysis && (
+                {analysis && !isEditing && (
                     <div className="w-full max-w-2xl mx-auto mb-8 border border-white/10 bg-white/5 rounded-lg p-5 md:p-6">
                         <div className="flex items-center space-x-2 mb-4 border-b border-white/5 pb-2">
                             <span className="w-2 h-2 bg-tactical-amber rounded-full animate-pulse"></span>
@@ -182,7 +236,7 @@ const SynthesisResult = ({ text, analysis, languageName, onReset, isPro, onShowT
                             </div>
                             <SkeletonDashboard />
                         </div>
-                    ) : (
+                    ) : !isEditing && (
                         <>
                             <motion.button
                                 onClick={handleGenerate}

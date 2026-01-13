@@ -51,6 +51,8 @@ export const TRANSLATIONS = {
             gift: "GIFT GHOSTNOTE PRO",
             upgrade: "UPGRADE TO PRO",
             select_file: "Select audio file",
+            edit: "Edit Transcription",
+            save_generate: "Save & Generate",
         },
         scribe: {
             title: "THE SCRIBE",
