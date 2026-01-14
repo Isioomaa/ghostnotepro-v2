@@ -25,8 +25,7 @@ try:
     # Preserving VITE_GEMINI_API_KEY for frontend
     with open(".env", "w") as f:
         f.write(f"GEMINI_API_KEY={NEW_API_KEY}\n")
-        f.write(f"VITE_GEMINI_API_KEY={NEW_API_KEY}\n")
-    print("✅ Saved new API Key to .env (Backend & Frontend)")
+    print("✅ Saved new API Key to .env (Backend)")
     
     # 3. Update api/index.py to force this model
     api_path = "api/index.py"

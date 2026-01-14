@@ -664,7 +664,7 @@ const SynthesisResult = ({ text, analysis, languageName, currentLang, t, onReset
 
                             try {
                                 localStorage.setItem(`ghostnote_archive_${id}`, JSON.stringify(archiveData));
-                                const url = `${window.location.origin}/archive/${id}`;
+                                const url = `https://ghostnotepro.com/archive/${id}`;
                                 navigator.clipboard.writeText(url);
                                 onShowToast(localT.messages?.archive_success || "Archive Saved");
                             } catch (err) {
@@ -685,7 +685,7 @@ const SynthesisResult = ({ text, analysis, languageName, currentLang, t, onReset
                 sessionId={sessionId}
                 textToShare={getTextToShare()}
                 analysisResult={data}
-                url={window.location.href}
+                url={data ? `https://ghostnotepro.com/archive/${draftId || 'latest'}` : "https://ghostnotepro.com"}
                 isPro={isPro}
                 onPaywallTrigger={() => setShowPaywall(true)}
                 onShowToast={onShowToast}

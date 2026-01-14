@@ -59,7 +59,7 @@ const StrategicBriefView = () => {
 
     const isStrategist = !!(content.executive_judgement || content.judgment);
     const scribeSnippet = content.core_thesis || (content.strategic_pillars?.[0]?.description) || "";
-    const shareUrl = `${window.location.origin}/archive/${id}`;
+
 
     return (
         <div className="min-h-screen bg-[#FFFEF7] text-gray-900 py-12 px-6 selection:bg-[#D4AF37] selection:text-white print:bg-white print:p-0 fade-in">
@@ -68,18 +68,18 @@ const StrategicBriefView = () => {
                 <meta name="description" content={scribeSnippet.substring(0, 160)} />
 
                 {/* Open Graph / Facebook */}
-                <meta property="og:type" content="website" />
-                <meta property="og:url" content={shareUrl} />
+                <meta property="og:type" content="article" />
+                <meta property="og:url" content={`https://ghostnotepro.com/archive/${id}`} />
                 <meta property="og:title" content={content.core_thesis || "Strategic Intelligence Brief"} />
-                <meta property="og:description" content={scribeSnippet.substring(0, 160)} />
-                <meta property="og:image" content={`${window.location.origin}/logo192.png`} />
+                <meta property="og:description" content={scribeSnippet.substring(0, 150)} />
+                <meta property="og:image" content="https://ghostnotepro.com/og-image.png" />
 
                 {/* Twitter */}
-                <meta property="twitter:card" content="summary_large_image" />
-                <meta property="twitter:url" content={shareUrl} />
-                <meta property="twitter:title" content={content.core_thesis || "Strategic Intelligence Brief"} />
-                <meta property="twitter:description" content={scribeSnippet.substring(0, 160)} />
-                <meta property="twitter:image" content={`${window.location.origin}/logo192.png`} />
+                <meta name="twitter:card" content="summary_large_image" />
+                <meta name="twitter:url" content={`https://ghostnotepro.com/archive/${id}`} />
+                <meta name="twitter:title" content={content.core_thesis || "Strategic Intelligence Brief"} />
+                <meta name="twitter:description" content={scribeSnippet.substring(0, 150)} />
+                <meta name="twitter:image" content="https://ghostnotepro.com/og-image.png" />
             </Helmet>
 
             {/* Museum Container */}

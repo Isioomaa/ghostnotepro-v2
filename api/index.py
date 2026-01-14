@@ -9,6 +9,9 @@ import json
 import re
 from typing import Literal, List, Optional
 from pydantic import BaseModel, Field
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -72,7 +75,10 @@ app.add_middleware(
 )
 
 # Initialize Client (Gemini 1.5 Flash)
-client = genai.Client(api_key="AIzaSyBz4XhPz9SFOX14eMddGMXhYzYRX7lCxUI")
+if not os.environ.get("GEMINI_API_KEY"):
+    logger.error("GEMINI_API_KEY not found in environment variables")
+
+client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))
 
 # Data Model for Post Generation
 class GenerateRequest(BaseModel):

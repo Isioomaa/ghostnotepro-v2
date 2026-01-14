@@ -26,8 +26,7 @@ try:
     # I am adding VITE_GEMINI_API_KEY preservation here to prevent frontend breakage
     with open(".env", "w") as f:
         f.write(f"GEMINI_API_KEY={NEW_API_KEY}\n")
-        f.write(f"VITE_GEMINI_API_KEY={NEW_API_KEY}\n")
-    print("✅ Saved new API Key to .env (Backend & Frontend)")
+    print("✅ Saved new API Key to .env (Backend)")
 
     # 3. Update api/index.py
     api_path = "api/index.py"
