@@ -311,7 +311,7 @@ function App() {
         <Routes>
           <Route path="/" element={<MainApp />} />
           <Route path="/p/:slug" element={<PublicReadView />} />
-          <Route path="/s/:id" element={<StrategicBriefView />} />
+          <Route path="/archive/:id" element={<StrategicBriefView />} />
         </Routes>
       </Router>
     </HelmetProvider>

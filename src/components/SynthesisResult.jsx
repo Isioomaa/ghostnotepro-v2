@@ -664,7 +664,7 @@ const SynthesisResult = ({ text, analysis, languageName, currentLang, t, onReset
 
                             try {
                                 localStorage.setItem(`ghostnote_archive_${id}`, JSON.stringify(archiveData));
-                                const url = `${window.location.origin}/s/${id}`;
+                                const url = `${window.location.origin}/archive/${id}`;
                                 navigator.clipboard.writeText(url);
                                 onShowToast(localT.messages?.archive_success || "Archive Saved");
                             } catch (err) {

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import { TRANSLATIONS } from '../constants/languages';
 
 const StrategicBriefView = () => {
@@ -12,7 +13,7 @@ const StrategicBriefView = () => {
         // Fetch from local storage (Simulated Archive)
         const loadArchive = () => {
             try {
-                const archived = localStorage.getItem(`archive:${id}`);
+                const archived = localStorage.getItem(`ghostnote_archive_${id}`);
                 if (archived) {
                     const parsedData = JSON.parse(archived);
                     setData(parsedData);
@@ -56,13 +57,31 @@ const StrategicBriefView = () => {
         );
     }
 
-    // Determine Mode and Content
-    const isStrategist = !!data.content?.executive_judgement;
-    const content = data.content || {};
-    const audit = data.analysis?.audit || {};
+    const isStrategist = !!(content.executive_judgement || content.judgment);
+    const scribeSnippet = content.core_thesis || (content.strategic_pillars?.[0]?.description) || "";
+    const shareUrl = `${window.location.origin}/archive/${id}`;
 
     return (
         <div className="min-h-screen bg-[#FFFEF7] text-gray-900 py-12 px-6 selection:bg-[#D4AF37] selection:text-white print:bg-white print:p-0 fade-in">
+            <Helmet>
+                <title>{content.core_thesis || "Strategic Intelligence Brief | GhostNote Pro"}</title>
+                <meta name="description" content={scribeSnippet.substring(0, 160)} />
+
+                {/* Open Graph / Facebook */}
+                <meta property="og:type" content="website" />
+                <meta property="og:url" content={shareUrl} />
+                <meta property="og:title" content={content.core_thesis || "Strategic Intelligence Brief"} />
+                <meta property="og:description" content={scribeSnippet.substring(0, 160)} />
+                <meta property="og:image" content={`${window.location.origin}/logo192.png`} />
+
+                {/* Twitter */}
+                <meta property="twitter:card" content="summary_large_image" />
+                <meta property="twitter:url" content={shareUrl} />
+                <meta property="twitter:title" content={content.core_thesis || "Strategic Intelligence Brief"} />
+                <meta property="twitter:description" content={scribeSnippet.substring(0, 160)} />
+                <meta property="twitter:image" content={`${window.location.origin}/logo192.png`} />
+            </Helmet>
+
             {/* Museum Container */}
             <article className="max-w-[800px] mx-auto bg-white shadow-sm border border-gray-100 p-12 md:p-20 print:shadow-none print:border-none print:p-0">
 
@@ -96,25 +115,27 @@ const StrategicBriefView = () => {
                     {isStrategist ? (
                         <>
                             <section>
-                                <h3 className="font-sans font-bold text-xs uppercase tracking-[0.2em] text-gray-400 mb-6">{t.strategist?.judgment || "Executive Judgment"}</h3>
-                                <p className="font-medium text-xl md:text-2xl leading-relaxed text-black">
-                                    {content.executive_judgement}
+                                <h3 className="font-sans font-bold text-[10px] uppercase tracking-[0.3em] text-gray-400 mb-6">{t.strategist?.judgment || "Executive Judgment"}</h3>
+                                <p className="font-playfair font-medium text-2xl md:text-3xl leading-relaxed text-black italic">
+                                    {content.executive_judgement || content.judgment}
                                 </p>
                             </section>
 
                             <hr className="border-gray-200" />
 
                             <section>
-                                <h3 className="font-sans font-bold text-xs uppercase tracking-[0.2em] text-red-800/60 mb-6">{t.strategist?.risk_audit || "Risk Audit"}</h3>
-                                <div className="bg-red-50 p-8 border-l-2 border-red-800 text-red-900 text-base italic">
-                                    {content.risk_audit}
+                                <h3 className="font-sans font-bold text-[10px] uppercase tracking-[0.3em] text-red-800/60 mb-6">{t.strategist?.risk_audit || "Risk Audit"}</h3>
+                                <div className="bg-red-50/50 p-8 md:p-12 border-l-4 border-red-800 text-red-900 text-lg md:text-xl font-medium leading-relaxed italic">
+                                    {content.risk_audit || content.riskAudit}
                                 </div>
                             </section>
 
                             <section>
-                                <h3 className="font-sans font-bold text-xs uppercase tracking-[0.2em] text-gray-400 mb-6">{t.strategist?.email_draft || "Drafted Communication"}</h3>
-                                <div className="font-mono text-sm bg-gray-50 p-8 border border-gray-100 text-gray-700 whitespace-pre-wrap">
-                                    {typeof content.email_draft === 'string' ? content.email_draft : (content.email_draft?.body || "Top Secret")}
+                                <h3 className="font-sans font-bold text-[10px] uppercase tracking-[0.3em] text-gray-400 mb-6">{t.strategist?.email_draft || "Drafted Communication"}</h3>
+                                <div className="font-mono text-sm md:text-base bg-gray-50 p-8 md:p-12 border border-gray-100 text-gray-700 whitespace-pre-wrap leading-relaxed">
+                                    {typeof (content.email_draft || content.emailDraft) === 'string'
+                                        ? (content.email_draft || content.emailDraft)
+                                        : ((content.email_draft || content.emailDraft)?.body || "Top Secret")}
                                 </div>
                             </section>
                         </>

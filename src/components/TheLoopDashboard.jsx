@@ -143,15 +143,40 @@ const TheLoopDashboard = ({ onClose, languageName, t }) => {
                                 </div>
                                 <h3 className="text-white font-bold text-lg mb-4">{d.prediction}</h3>
 
-                                {d.status === 'DUE' && (
-                                    <motion.button
-                                        onClick={() => setAuditing(d.id)}
-                                        className="bg-red-500 text-black text-[10px] font-bold px-4 py-2 rounded-sm uppercase tracking-widest hover:bg-red-400"
-                                        whileTap={{ scale: 0.95 }}
+                                <div className="flex space-x-2">
+                                    {d.status === 'DUE' && (
+                                        <motion.button
+                                            onClick={() => setAuditing(d.id)}
+                                            className="bg-red-500 text-black text-[10px] font-bold px-4 py-2 rounded-sm uppercase tracking-widest hover:bg-red-400"
+                                            whileTap={{ scale: 0.95 }}
+                                        >
+                                            {localT.history_view?.record_update || "Record Update"}
+                                        </motion.button>
+                                    )}
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            const shareId = `wager_${d.id.toString(36)}`;
+                                            // For wagers, we might need a different brief view, but let's use the archive structure
+                                            if (!localStorage.getItem(`ghostnote_archive_${shareId}`)) {
+                                                const archiveData = {
+                                                    id: shareId,
+                                                    timestamp: d.created_at,
+                                                    content: { core_thesis: d.prediction }, // Mocking for now as wagers don't have full briefs usually
+                                                    analysis: { audit: { executive_state: 'Predictive' } },
+                                                    language: 'EN'
+                                                };
+                                                localStorage.setItem(`ghostnote_archive_${shareId}`, JSON.stringify(archiveData));
+                                            }
+                                            const url = `${window.location.origin}/archive/${shareId}`;
+                                            navigator.clipboard.writeText(url);
+                                            alert("Prediction link copied to clipboard.");
+                                        }}
+                                        className="border border-white/20 text-white text-[10px] font-bold px-4 py-2 rounded-sm uppercase tracking-widest hover:bg-white/10"
                                     >
-                                        {localT.history_view?.record_update || "Record Update"}
-                                    </motion.button>
-                                )}
+                                        Share
+                                    </button>
+                                </div>
 
                                 {d.status === 'AUDITED' && (
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6 pt-6 border-t border-white/5">
