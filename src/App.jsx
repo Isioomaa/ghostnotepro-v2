@@ -116,14 +116,14 @@ function MainApp() {
         await navigator.share({
           title: 'GhostNote Pro',
           text: t.messages.share_text,
-          url: window.location.href,
+          url: 'https://www.ghostnotepro.com',
         });
       } catch (err) {
         console.log('Share cancelled');
       }
     } else {
       try {
-        await navigator.clipboard.writeText(window.location.href);
+        await navigator.clipboard.writeText('https://www.ghostnotepro.com');
         showCustomToast(t.messages.copy_success);
       } catch (err) {
         console.error('Failed to copy:', err);

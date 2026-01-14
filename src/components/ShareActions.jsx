@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { FaLinkedin, FaXTwitter, FaWhatsapp, FaRegCopy, FaGlobe } from 'react-icons/fa6';
 import axios from 'axios';
 
-const ShareActions = ({ sessionId, textToShare, analysisResult, isPro, onPaywallTrigger, onShowToast, url = "https://ghostnotepro.com", t }) => {
+const ShareActions = ({ sessionId, textToShare, analysisResult, isPro, onPaywallTrigger, onShowToast, url = "https://www.ghostnotepro.com", t }) => {
     const [sharing, setSharing] = useState(false);
     const [copied, setCopied] = useState(false);
     const [isPublishing, setIsPublishing] = useState(false);
