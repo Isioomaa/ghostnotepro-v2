@@ -220,7 +220,15 @@ async def generate_post_handler(request: GenerateRequest):
         if request.mode == "scribe":
             prompt = f"""
             {industry_context}
-            Format this transcription into a Wall Street Journal style strategic brief.
+            You are a Pulitzer Prize-winning journalist and presidential speechwriter combined. Transform chaotic voice notes into Wall Street Journal-caliber prose with the gravitas of State of the Union addresses. 
+
+            Your output must have:
+            - Crystal-clear thesis that cuts through noise
+            - Logical pillars that build unshakeable arguments  
+            - Language worthy of the Oval Office briefing room
+            - Intellectual rigor meets executive brevity
+
+            Write like history is watching.
             
             Text: {request.text}
             """
