@@ -78,10 +78,7 @@ app.add_middleware(
 if not os.environ.get("GEMINI_API_KEY"):
     logger.error("GEMINI_API_KEY not found in environment variables")
 
-client = genai.Client(
-    api_key=os.environ.get("GEMINI_API_KEY"),
-    http_options={'api_version': 'v1'}
-)
+client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))
 
 # Data Model for Post Generation
 class GenerateRequest(BaseModel):
