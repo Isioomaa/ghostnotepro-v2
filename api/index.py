@@ -104,7 +104,7 @@ async def transmute_handler(file: UploadFile = File(...)):
 
         # 2. GENERATE (Inline approach - NO FILE UPLOAD)
         response = client.models.generate_content(
-            model="gemini-1.5-flash",
+            model="gemini-1.5-flash-001",
             config=types.GenerateContentConfig(
                 response_mime_type="application/json",
                 safety_settings=[
@@ -291,7 +291,7 @@ async def generate_post_handler(request: GenerateRequest):
 
         # Generate with Gemini using response_schema
         response = client.models.generate_content(
-            model="gemini-1.5-flash",
+            model="gemini-1.5-flash-001",
             config=types.GenerateContentConfig(
                 response_mime_type="application/json",
                 response_schema=schema,
