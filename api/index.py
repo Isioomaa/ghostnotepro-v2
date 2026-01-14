@@ -72,7 +72,7 @@ app.add_middleware(
 )
 
 # Initialize Client (Gemini 1.5 Flash)
-client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))
+client = genai.Client(api_key="AIzaSyBz4XhPz9SFOX14eMddGMXhYzYRX7lCxUI")
 
 # Data Model for Post Generation
 class GenerateRequest(BaseModel):
@@ -98,7 +98,7 @@ async def transmute_handler(file: UploadFile = File(...)):
 
         # 2. GENERATE (Inline approach - NO FILE UPLOAD)
         response = client.models.generate_content(
-            model="gemini-flash-latest",
+            model="gemini-1.5-flash",
             config=types.GenerateContentConfig(
                 response_mime_type="application/json",
                 safety_settings=[
@@ -285,7 +285,7 @@ async def generate_post_handler(request: GenerateRequest):
 
         # Generate with Gemini using response_schema
         response = client.models.generate_content(
-            model="gemini-flash-latest",
+            model="gemini-1.5-flash",
             config=types.GenerateContentConfig(
                 response_mime_type="application/json",
                 response_schema=schema,
