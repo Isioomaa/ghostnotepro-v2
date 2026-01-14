@@ -71,7 +71,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Initialize Client (Gemini 2.5 Flash)
+# Initialize Client (Gemini 1.5 Flash)
 client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))
 
 # Data Model for Post Generation
@@ -285,7 +285,7 @@ async def generate_post_handler(request: GenerateRequest):
 
         # Generate with Gemini using response_schema
         response = client.models.generate_content(
-            model="gemini-2.5-flash",
+            model="gemini-1.5-flash",
             config=types.GenerateContentConfig(
                 response_mime_type="application/json",
                 response_schema=schema,
