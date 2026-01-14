@@ -46,17 +46,47 @@ const PaywallModal = ({ onClose, scenario = 'upsell', t }) => {
                 </div>
 
                 {/* Premium Headlines */}
-                <div className="mb-12">
-                    <h2 className="font-serif text-3xl md:text-5xl text-[#a88e65]/90 mb-8 leading-tight tracking-tight px-4">
-                        {localT.paywall?.headline || "Continue turning thought into strategy"}
-                    </h2>
-
-                    <div className="space-y-6 max-w-sm mx-auto text-gray-400 font-light leading-relaxed px-2">
-                        <p className="text-sm">
-                            {localT.paywall?.subtext || "Pro removes daily limits and unlocks executive-grade transmutation, confidence analysis, and shareable outputs."}
+                {/* Content based on Scenario */}
+                {scenario === 'limit_reached' ? (
+                    <div className="mb-12">
+                        <h2 className="font-serif text-3xl md:text-5xl text-[#a88e65]/90 mb-8 leading-tight tracking-tight px-4">
+                            You've reached your free tier limit
+                        </h2>
+                        <p className="text-gray-400 font-light leading-relaxed px-2 text-sm mb-8">
+                            You've used all 3 free transmutations. Your strategic thinking deserves unlimited processing.
                         </p>
+
+                        <div className="text-left max-w-sm mx-auto space-y-4 mb-8 text-sm text-gray-400">
+                            <p className="font-bold text-[#a88e65]">With GhostNote Pro, you get:</p>
+                            <ul className="space-y-2 list-none">
+                                <li className="flex items-start">
+                                    <span className="text-[#a88e65] mr-2">✓</span> Unlimited Scribe transmutations
+                                </li>
+                                <li className="flex items-start">
+                                    <span className="text-[#a88e65] mr-2">✓</span> Strategist Intelligence (Judyment, Risk Audits)
+                                </li>
+                                <li className="flex items-start">
+                                    <span className="text-[#a88e65] mr-2">✓</span> Priority processing
+                                </li>
+                                <li className="flex items-start">
+                                    <span className="text-[#a88e65] mr-2">✓</span> Extended archive storage
+                                </li>
+                            </ul>
+                        </div>
                     </div>
-                </div>
+                ) : (
+                    <div className="mb-12">
+                        <h2 className="font-serif text-3xl md:text-5xl text-[#a88e65]/90 mb-8 leading-tight tracking-tight px-4">
+                            {localT.paywall?.headline || "Continue turning thought into strategy"}
+                        </h2>
+
+                        <div className="space-y-6 max-w-sm mx-auto text-gray-400 font-light leading-relaxed px-2">
+                            <p className="text-sm">
+                                {localT.paywall?.subtext || "Pro removes daily limits and unlocks executive-grade transmutation, confidence analysis, and shareable outputs."}
+                            </p>
+                        </div>
+                    </div>
+                )}
 
                 {/* The Membership Button */}
                 <div className="space-y-10">
@@ -71,6 +101,14 @@ const PaywallModal = ({ onClose, scenario = 'upsell', t }) => {
                         t={localT}
                     />
 
+                    {scenario === 'limit_reached' && (
+                        <div className="-mt-6">
+                            <button className="text-xs text-gray-600 hover:text-gray-400 underline transition-colors">
+                                View plans
+                            </button>
+                        </div>
+                    )}
+
                     {/* Footer Links */}
                     <div className="space-y-6">
                         <p className="text-[11px] text-gray-600 uppercase tracking-[0.2em] opacity-80">
@@ -79,10 +117,16 @@ const PaywallModal = ({ onClose, scenario = 'upsell', t }) => {
 
                         <button
                             onClick={onClose}
-                            className="text-xs text-gray-500 hover:text-[#a88e65] transition-colors uppercase tracking-[0.3em] font-light"
+                            className="text-xs text-gray-500 hover:text-[#a88e65] transition-colors uppercase tracking-[0.3em] font-light block mx-auto"
                         >
                             {localT.paywall?.restore || "Restore Purchase"}
                         </button>
+
+                        {scenario === 'limit_reached' && (
+                            <p className="text-[10px] text-gray-700 mt-4">
+                                Questions? <a href="mailto:support@ghostnotepro.com" className="underline hover:text-gray-500">Contact support</a>
+                            </p>
+                        )}
                     </div>
                 </div>
             </div>

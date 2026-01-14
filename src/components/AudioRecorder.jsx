@@ -124,7 +124,7 @@ const AudioRecorder = ({ onUploadSuccess, t, languageName, isPro, initialAudio }
         const hasReachedLimit = usageCount >= LIMIT && !isProActive;
 
         if (hasReachedLimit) {
-            // Soft lock handles this now, button is disabled
+            setShowPaywall(true);
             return;
         }
 
@@ -187,7 +187,7 @@ const AudioRecorder = ({ onUploadSuccess, t, languageName, isPro, initialAudio }
         const hasReachedLimit = usageCount >= LIMIT && !isProActive;
 
         if (hasReachedLimit) {
-            // Soft lock handles this now
+            setShowPaywall(true);
             return;
         }
 
@@ -335,22 +335,13 @@ const AudioRecorder = ({ onUploadSuccess, t, languageName, isPro, initialAudio }
                             <div className="flex flex-col items-center space-y-4">
                                 <button
                                     onClick={startRecording}
-                                    disabled={!isProActive && getUsageCount() >= LIMIT}
-                                    className={`w-32 h-32 rounded-full border border-[#A88E65] flex items-center justify-center transition-all ${(!isProActive && getUsageCount() >= LIMIT) ? 'opacity-50 cursor-not-allowed' : 'hover:bg-[#A88E65]/5'}`}
+                                    className={`w-32 h-32 rounded-full border border-[#A88E65] flex items-center justify-center transition-all hover:bg-[#A88E65]/5`}
                                 >
                                     <svg className="w-8 h-8 text-[#A88E65]" fill="currentColor" viewBox="0 0 24 24">
                                         <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm-1 1.93c-3.94-.49-7-3.85-7-7.93h2c0 3.31 2.69 6 6 6s6-2.69 6-6h2c0 4.08-3.06 7.44-7 7.93V20h4v2H8v-2h4v-4.07z" />
                                     </svg>
                                 </button>
-                                {(!isProActive && getUsageCount() >= LIMIT) && (
-                                    <p
-                                        onClick={() => setShowPaywall(true)}
-                                        className="text-amber-500 text-xs mt-2 cursor-pointer hover:underline"
-                                    >
-                                        {t.messages.free_limit}
-                                    </p>
-                                )}
-                                {!(!isProActive && getUsageCount() >= LIMIT) && (
+                                {(!isProActive && getUsageCount() >= LIMIT) ? null : (
                                     <p className="text-[#cccccc] text-sm">{t.messages.tap_record}</p>
                                 )}
                             </div>
