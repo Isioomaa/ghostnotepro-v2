@@ -7,7 +7,8 @@ import os
 import logging
 import json
 import re
-from typing import Literal
+from typing import Literal, List, Optional
+from pydantic import BaseModel, Field
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -109,78 +110,22 @@ async def transmute_handler(file: UploadFile = File(...)):
             ),
             contents=[
                 types.Part.from_bytes(data=audio_bytes, mime_type=mime_type),
-                """You are an elite Chief of Staff serving global C-suite executives. Your executives operate across borders and speak multiple languages. They need strategic clarity in English, regardless of input language.
-
-This audio recording may be in ANY language (English, Spanish, French, Mandarin, Arabic, Portuguese, German, Japanese, Hindi, etc.).
-
-YOUR PROCESS:
-
-STEP 1 - TRANSCRIBE ACCURATELY:
-- Listen carefully and transcribe EXACTLY what was said
-- Preserve the executive's original language
-- Maintain nuance, tone, and strategic intent
-- If there are multiple languages mixed (code-switching), handle both
-
-STEP 2 - TRANSLATE TO ENGLISH (if needed):
-- If the audio is NOT in English, translate it to English
-- Preserve executive voice and strategic intent
-- Don't over-formalize - keep the natural thinking style
-- Maintain technical terms and business jargon appropriately
-
-STEP 3 - EXTRACT CORE THESIS (Chief of Staff Intelligence):
-Now, regardless of original language, distill this into a strategic brief in English.
-Your executive is brilliant but their thoughts are scattered. What is the ONE core strategic insight here?
-- Distill into a single, powerful Core Thesis statement (30-60 words)
-- This should be Board-meeting caliber
-- Format: Clear subject + strategic insight + why it matters now
-- Think: "The strategic opportunity in [X] is [Y], which positions us to [Z]"
-
-STEP 4 - IDENTIFY STRATEGIC PILLARS:
-What are the 3-5 key strategic levers that make this thesis actionable?
-- Each pillar should be a strategic driver (not a task list)
-- Format: Bold strategic statement + 1-2 sentences of Chief of Staff-level analysis
-- Think McKinsey/BCG framework quality
-
-STEP 5 - CLASSIFY EXECUTIVE STATE:
-Analyze the tone, pace, and content. Classify as ONE of:
-- Reflective (thinking out loud, exploring)
-- Decisive (clear directives, action-oriented)
-- Analytical (data-driven, logical)
-- Urgent (time-sensitive, high stakes)
-- Strategic (long-term, big picture)
-- Operational (execution-focused, tactical)
-
-OUTPUT REQUIREMENTS:
-Return ONLY valid JSON with this exact structure:
-{
-  "transcription": "The full english transcription of the audio...",
-  "core_thesis": "The core thesis statement...",
-  "strategic_pillars": [
-      {"title": "Bold Strategic Statement", "description": "1-2 sentences of analysis..."}
-  ],
-  "tactical_steps": [
-    "Step 1: concrete actionable item",
-    "Step 2: concrete actionable item",
-    "Step 3: concrete actionable item"
-  ],
-  "executive_state": "Reflective"
-}
-
-TONE: Confident. Analytical. Executive-grade. Zero fluff. This is what a $300K/year Chief of Staff would produce.
-
-EXAMPLES OF LANGUAGE HANDLING:
-
-If executive says in Spanish:
-"Necesitamos cambiar nuestra estrategia de precios porque Amazon está bajando sus tarifas un 15%"
-You produce logic for:
-CORE THESIS: "The strategic imperative in pricing restructuring lies in responding to Amazon's 15% tariff reduction, positioning our value proposition to retain margin while maintaining competitive relevance in a commoditizing market."
-
-If executive says in French:
-"Je pense que notre problème n'est pas le produit mais notre go-to-market est complètement cassé"
-You produce logic for:
-CORE THESIS: "The core strategic challenge is not product-market fit but go-to-market execution dysfunction, which masks underlying product strengths and creates false signals about market demand."
-
-CRITICAL: The output quality should be IDENTICAL whether the executive speaks in English, Spanish, Mandarin, or any other language. World-class Chief of Staff intelligence, always."""
+                """You are an elite transcriptionist and Chief of Staff. Transcribe this audio accurately.
+                
+                The audio may be in any language. 
+                
+                1. TRANSCRIBE: Capture exactly what was said.
+                2. TRANSLATE: If not in English, also provide an English translation.
+                3. STATE: Classify the executive state (Reflective, Decisive, Analytical, Urgent, Strategic, Operational).
+                
+                Return ONLY a JSON object:
+                {
+                  "transcription": "The full english transcription (translated if needed)",
+                  "original_transcription": "The transcription in the original language (if not English)",
+                  "executive_state": "Reflective"
+                }
+                
+                Zero chatter. Zero markdown. Pure JSON."""
             ]
         )
         
@@ -275,51 +220,61 @@ async def generate_post_handler(request: GenerateRequest):
         if request.mode == "scribe":
             prompt = f"""
             {industry_context}
-            Format this transcription into a Wall Street Journal style strategic brief with:
-            1) Core Thesis (main strategic argument)
-            2) Pillars (3-5 supporting strategic points, each with a title and deep-dive description)
-            3) Tactical Steps (3-5 concrete, actionable execution items)
-
-            Text to analyze: {request.text}
-
-            Return ONLY a valid JSON object with keys: 
-            - "core_thesis": string
-            - "strategic_pillars": list of objects with "title" (string) and "description" (string)
-            - "tactical_steps": list of strings
-
-            Direct output only. No markdown formatting.
+            Format this transcription into a Wall Street Journal style strategic brief.
+            
+            Text: {request.text}
             """
+            
+            # Use structured output for Scribe
+            schema = {
+                "type": "OBJECT",
+                "properties": {
+                    "core_thesis": {"type": "STRING", "description": "30-60 word strategic thesis statement"},
+                    "strategic_pillars": {
+                        "type": "ARRAY",
+                        "items": {
+                            "type": "OBJECT",
+                            "properties": {
+                                "title": {"type": "STRING"},
+                                "description": {"type": "STRING", "description": "1-2 sentences of COS analysis"}
+                            },
+                            "required": ["title", "description"]
+                        }
+                    },
+                    "tactical_steps": {
+                        "type": "ARRAY",
+                        "items": {"type": "STRING"}
+                    }
+                },
+                "required": ["core_thesis", "strategic_pillars", "tactical_steps"]
+            }
         else: # strategist
             prompt = f"""
             {industry_context}
-            You are an elite Chief of Staff specializing in {request.industry if request.industry else 'global business'}. 
-            You think 3-5 chess moves ahead. You see what others miss.
-
-            Analyze this transcription and provide THREE critical deliverables:
-
-            1) JUDGMENT: What is the REAL strategic challenge here? (150-250 words)
-            2) RISK AUDIT: What are the primary and hidden risks? (150-250 words)
-            3) EMAIL DRAFT: A ready-to-send draft for stakeholders. Include "SUBJECT: " at the top.
-
-            Text to analyze: {request.text}
-
-            Return ONLY a valid JSON object with this EXACT structure:
-            {{
-              "judgment": "judgment text here",
-              "riskAudit": "risk audit text here",
-              "emailDraft": "SUBJECT: Subject line here\\n\\nEmail body here"
-            }}
-
-            No markdown. No bolding. No preamble. Pure intelligence.
+            You are an elite Chief of Staff. Identify the deep strategic implications and risks in this text.
+            
+            Text: {request.text}
             """
+            
+            # Use structured output for Strategist
+            schema = {
+                "type": "OBJECT",
+                "properties": {
+                    "judgment": {"type": "STRING", "description": "150-250 words of deep strategic judgment"},
+                    "riskAudit": {"type": "STRING", "description": "150-250 words of risk analysis"},
+                    "emailDraft": {"type": "STRING", "description": "A ready-to-send draft starting with 'SUBJECT: '"}
+                },
+                "required": ["judgment", "riskAudit", "emailDraft"]
+            }
         
         logger.info(f"Triggering Gemini for mode: {request.mode}")
 
-        # Generate with Gemini
+        # Generate with Gemini using response_schema
         response = client.models.generate_content(
             model="gemini-2.5-flash",
             config=types.GenerateContentConfig(
                 response_mime_type="application/json",
+                response_schema=schema,
                 safety_settings=[
                     types.SafetySetting(category="HARM_CATEGORY_HATE_SPEECH", threshold="BLOCK_NONE"),
                     types.SafetySetting(category="HARM_CATEGORY_HARASSMENT", threshold="BLOCK_NONE"),

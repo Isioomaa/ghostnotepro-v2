@@ -202,11 +202,12 @@ const AudioRecorder = ({ onUploadSuccess, t, languageName, isPro, initialAudio }
             let textValue = "";
             let analysisData = null;
 
-            if (response.data && response.data.core_thesis) {
+            if (response.data && response.data.transcription) {
                 // New JSON format
-                const { transcription, executive_state, core_thesis, strategic_pillars, tactical_steps } = response.data;
+                const { transcription, executive_state, core_thesis, strategic_pillars, tactical_steps, industry } = response.data;
 
                 textValue = transcription || "";
+                console.log('✅ Transcription received. Industry:', industry);
 
                 // Calculate Emphasis Audit
                 const durationSeconds = recordingTime || 60; // Fallback if 0 (upload mode)
@@ -228,12 +229,17 @@ const AudioRecorder = ({ onUploadSuccess, t, languageName, isPro, initialAudio }
                         intensity: intensity,
                         executive_state: executive_state || "Reflective"
                     },
-                    content: {
+                    industry: industry || "General Business"
+                };
+
+                // Only add content if it was actually returned (e.g. from a legacy flow)
+                if (core_thesis || strategic_pillars || tactical_steps) {
+                    analysisData.content = {
                         core_thesis: core_thesis,
                         strategic_pillars: strategic_pillars,
                         tactical_steps: tactical_steps
-                    }
-                };
+                    };
+                }
             } else if (typeof response === 'string') {
                 // Legacy fallback
                 textValue = response;
