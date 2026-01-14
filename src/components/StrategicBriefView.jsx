@@ -71,7 +71,7 @@ const StrategicBriefView = () => {
                 <meta property="og:type" content="article" />
                 <meta property="og:url" content={`https://ghostnotepro.com/archive/${id}`} />
                 <meta property="og:title" content={content.core_thesis || "Strategic Intelligence Brief"} />
-                <meta property="og:description" content={scribeSnippet.substring(0, 150)} />
+                <meta property="og:description" content={`Executive-grade strategy from voice notes. ${scribeSnippet.substring(0, 150)}`} />
                 <meta property="og:image" content="https://ghostnotepro.com/og-image.png" />
 
                 {/* Twitter */}
@@ -185,7 +185,7 @@ const StrategicBriefView = () => {
                         to="/"
                         className="inline-block bg-black text-white font-sans text-xs font-bold uppercase tracking-[0.2em] px-8 py-4 hover:bg-gray-800 transition-colors"
                     >
-                        {t.brief_view?.create_own || "Create Your Own Brief"}
+                        {t.brief_view?.create_own || "Create Your Own Executive Intelligence"}
                     </Link>
                 </footer>
 
