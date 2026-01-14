@@ -1,8 +1,7 @@
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from google import genai
-from google.genai import types
+import google.generativeai as genai
 import os
 import logging
 import json
@@ -78,7 +77,8 @@ app.add_middleware(
 if not os.environ.get("GEMINI_API_KEY"):
     logger.error("GEMINI_API_KEY not found in environment variables")
 
-client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))
+genai.configure(api_key=os.environ.get("GEMINI_API_KEY"))
+model = genai.GenerativeModel('gemini-1.5-flash')
 
 # Data Model for Post Generation
 class GenerateRequest(BaseModel):
@@ -103,19 +103,12 @@ async def transmute_handler(file: UploadFile = File(...)):
         mime_type = mime_type.split(";")[0]
 
         # 2. GENERATE (Inline approach - NO FILE UPLOAD)
-        response = client.models.generate_content(
-            model="gemini-1.5-flash",
-            config=types.GenerateContentConfig(
-                response_mime_type="application/json",
-                safety_settings=[
-                    types.SafetySetting(category="HARM_CATEGORY_HATE_SPEECH", threshold="BLOCK_NONE"),
-                    types.SafetySetting(category="HARM_CATEGORY_HARASSMENT", threshold="BLOCK_NONE"),
-                    types.SafetySetting(category="HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold="BLOCK_NONE"),
-                    types.SafetySetting(category="HARM_CATEGORY_DANGEROUS_CONTENT", threshold="BLOCK_NONE"),
-                ]
-            ),
+        response = model.generate_content(
             contents=[
-                types.Part.from_bytes(data=audio_bytes, mime_type=mime_type),
+                {
+                    "mime_type": mime_type,
+                    "data": audio_bytes
+                },
                 """You are an elite transcriptionist and Chief of Staff. Transcribe this audio accurately.
                 
                 The audio may be in any language. 
@@ -132,6 +125,15 @@ async def transmute_handler(file: UploadFile = File(...)):
                 }
                 
                 Zero chatter. Zero markdown. Pure JSON."""
+            ],
+            generation_config={
+                "response_mime_type": "application/json",
+            },
+            safety_settings=[
+                {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE"},
+                {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
+                {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE"},
+                {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"},
             ]
         )
         
@@ -290,19 +292,18 @@ async def generate_post_handler(request: GenerateRequest):
         logger.info(f"Triggering Gemini for mode: {request.mode}")
 
         # Generate with Gemini using response_schema
-        response = client.models.generate_content(
-            model="gemini-1.5-flash",
-            config=types.GenerateContentConfig(
-                response_mime_type="application/json",
-                response_schema=schema,
-                safety_settings=[
-                    types.SafetySetting(category="HARM_CATEGORY_HATE_SPEECH", threshold="BLOCK_NONE"),
-                    types.SafetySetting(category="HARM_CATEGORY_HARASSMENT", threshold="BLOCK_NONE"),
-                    types.SafetySetting(category="HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold="BLOCK_NONE"),
-                    types.SafetySetting(category="HARM_CATEGORY_DANGEROUS_CONTENT", threshold="BLOCK_NONE"),
-                ]
-            ),
-            contents=prompt
+        response = model.generate_content(
+            contents=prompt,
+            generation_config={
+                "response_mime_type": "application/json",
+                "response_schema": schema,
+            },
+            safety_settings=[
+                {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE"},
+                {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
+                {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE"},
+                {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"},
+            ]
         )
         
         # Parse result
