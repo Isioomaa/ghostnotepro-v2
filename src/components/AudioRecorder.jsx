@@ -4,6 +4,8 @@ import { getUsageCount, incrementUsageCount, LIMIT } from '../utils/usageTracker
 import { transmuteAudio, saveDraft } from '../services/gemini';
 import PaywallModal from './PaywallModal';
 
+export const RAW_DRAFT_PLACEHOLDER = "Audio recording saved as draft. Transmute to see insights.";
+
 const PLATFORMS = [
     { id: 'twitter', name: 'X' },
     { id: 'linkedin', name: 'LinkedIn' },
@@ -453,7 +455,7 @@ const AudioRecorder = ({ onUploadSuccess, t, languageName, isPro, initialAudio }
                                     const newDraft = {
                                         id: Date.now(),
                                         title: file ? file.name : `Voice Note ${new Date().toLocaleTimeString()}`,
-                                        transcript: "Audio recording saved as draft. Transmute to see insights.",
+                                        transcript: RAW_DRAFT_PLACEHOLDER,
                                         tag: "💭 Brain Dump",
                                         created_at: new Date().toISOString(),
                                         audioData: audioBase64 // Persist audio!

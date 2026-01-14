@@ -8,6 +8,7 @@ import SynthesisResult from './components/SynthesisResult';
 import PublicReadView from './components/PublicReadView';
 import DraftsView from './components/DraftsView';
 import TheLoopDashboard from './components/TheLoopDashboard';
+import { RAW_DRAFT_PLACEHOLDER } from './components/AudioRecorder';
 import { TRANSLATIONS, getLanguageName } from './constants/languages';
 import { analyzeText } from './utils/analysis';
 import { isPro as getInitialPro, PRO_STATUS_CHANGED_EVENT } from './utils/usageTracker';
@@ -50,7 +51,10 @@ function MainApp() {
   const handleUploadSuccess = async (text, platforms, analysisData) => {
     if (!text) return;
     setTranscription(text);
-    setCurrentDraftId(null); // Reset draft ID on new upload/recording unless we explicitly save it there (which we don't yet in AudioRecorder directly to App)
+    // Only reset currentDraftId if it wasn't already set (e.g. from loading a draft)
+    if (!currentDraftId) {
+      setCurrentDraftId(null);
+    }
 
     // Store content if provided separately (for Scribe view)
     if (analysisData && analysisData.content) {
@@ -59,6 +63,8 @@ function MainApp() {
 
     if (analysisData && analysisData.industry) {
       setIndustry(analysisData.industry);
+    } else if (industry) {
+      // Keep existing industry if not provided in new analysis
     }
 
     try {
@@ -247,11 +253,19 @@ function MainApp() {
           onClose={() => setActiveModal(null)}
           t={t}
           onLoadDraft={(draft) => {
-            setTranscription(draft.transcript || draft.transcription);
+            const isRawDraft = (draft.transcript || draft.transcription) === RAW_DRAFT_PLACEHOLDER;
+
+            if (isRawDraft) {
+              setTranscription(null); // Show recorder/landing page
+            } else {
+              setTranscription(draft.transcript || draft.transcription);
+            }
+
             setAnalysis(draft.analysis || null);
             setInitialResultData(draft.content || null); // Pass persisted content if available
             setInitialAudio(draft.audioData || null); // Pass persisted audio if available
             setCurrentDraftId(draft.id); // Set the active draft ID!
+            setIndustry(draft.industry || null); // Load industry if present
             setActiveModal(null);
           }}
         />
