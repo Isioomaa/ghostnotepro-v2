@@ -64,12 +64,19 @@ const SynthesisResult = ({ text, analysis, languageName, currentLang, t, onReset
         setLoading(true);
         setError(null);
         try {
-            console.log('🚀 Starting generation...');
+            console.log('🚀 Starting generation. isPro:', isPro);
+            console.log('--- Industry Context:', industry);
 
             // Always generate Scribe content (base layer) using edited text
             const scribePromise = generateExecutiveSuite(editableText, analysis, languageName, 'scribe', isPro, industry);
 
             // If Pro, also generate Strategist content
+            if (isPro) {
+                console.log('💎 Pro user detected. Triggering Strategist...');
+            } else {
+                console.log('⚪ Free user detected. Skipping Strategist.');
+            }
+
             const strategistPromise = isPro
                 ? generateExecutiveSuite(editableText, analysis, languageName, 'strategist', isPro, industry)
                 : Promise.resolve({});
@@ -79,25 +86,28 @@ const SynthesisResult = ({ text, analysis, languageName, currentLang, t, onReset
             const scribeResult = results[0];
             const strategistResult = results[1];
 
+            console.log('Scribe Result Status:', scribeResult.status);
+            console.log('Strategist Result Status:', strategistResult.status);
+
             let combinedResult = {};
             let strategistError = null;
 
             if (scribeResult.status === 'fulfilled' && scribeResult.value) {
                 combinedResult = { ...combinedResult, ...scribeResult.value };
-                console.log('✅ Scribe fulfilled');
+                console.log('✅ Scribe fulfilled with keys:', Object.keys(scribeResult.value));
             } else if (scribeResult.status === 'rejected') {
                 console.error('❌ Scribe failed:', scribeResult.reason);
             }
 
             if (strategistResult.status === 'fulfilled' && strategistResult.value) {
                 combinedResult = { ...combinedResult, ...strategistResult.value };
-                console.log('✅ Strategist fulfilled');
+                console.log('✅ Strategist fulfilled with keys:', Object.keys(strategistResult.value));
             } else if (strategistResult.status === 'rejected') {
                 console.error('❌ Strategist failed:', strategistResult.reason);
                 strategistError = strategistResult.reason?.message || "Strategist generation failed.";
             }
 
-            console.log('✅ Final Combined Data:', combinedResult);
+            console.log('🏁 Final Combined Data keys:', Object.keys(combinedResult));
 
             if (Object.keys(combinedResult).length === 0) {
                 throw new Error("Both generation modes failed. Please try again.");

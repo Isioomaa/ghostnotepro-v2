@@ -99,6 +99,7 @@ async def transmute_handler(file: UploadFile = File(...)):
         response = client.models.generate_content(
             model="gemini-2.5-flash",
             config=types.GenerateContentConfig(
+                response_mime_type="application/json",
                 safety_settings=[
                     types.SafetySetting(category="HARM_CATEGORY_HATE_SPEECH", threshold="BLOCK_NONE"),
                     types.SafetySetting(category="HARM_CATEGORY_HARASSMENT", threshold="BLOCK_NONE"),
@@ -204,27 +205,51 @@ CRITICAL: The output quality should be IDENTICAL whether the executive speaks in
 def clean_and_parse_json(text: str):
     """Robust helper to extract JSON from Gemini's response."""
     try:
-        # Remove markdown code blocks and any trailing/leading whitespace/newlines
-        json_str = re.sub(r'```json\s*|\s*```', '', text, flags=re.MULTILINE).strip()
-        
-        # If there's preamble text before the first '{', strip it
-        start_idx = json_str.find('{')
-        end_idx = json_str.rfind('}')
-        
-        if start_idx != -1 and end_idx != -1:
-            json_str = json_str[start_idx:end_idx + 1]
+        # If it's already a dict (shouldn't happen with .text but for safety)
+        if isinstance(text, dict):
+            return text
             
-        return json.loads(json_str)
-    except Exception as e:
-        logger.error(f"JSON Parsing Error: {str(e)} | Raw: {text}")
-        # Fallback: attempt to find anything between braces
+        # 1. Direct parse if possible
         try:
-            match = re.search(r'\{.*\}', text, re.DOTALL)
-            if match:
-                return json.loads(match.group())
+            return json.loads(text)
         except:
             pass
-        raise ValueError("Could not parse JSON from Gemini response")
+
+        # 2. Strip markdown blocks
+        clean_text = re.sub(r'```json\s*|\s*```', '', text, flags=re.MULTILINE).strip()
+        
+        # 3. Handle problematic raw newlines in strings by finding content between brackets/braces
+        # But first try the cleaned text
+        try:
+            return json.loads(clean_text)
+        except:
+            pass
+
+        # 4. Final attempt: extract between first { and last }
+        start_idx = clean_text.find('{')
+        end_idx = clean_text.rfind('}')
+        
+        if start_idx != -1 and end_idx != -1:
+            snippet = clean_text[start_idx:end_idx + 1]
+            try:
+                return json.loads(snippet)
+            except Exception as e:
+                # If it fails here, it might be due to unescaped newlines in JSON strings
+                # Let's try to replace common problematic patterns if it still fails
+                try:
+                    # Very aggressive: try to fix common JSON errors if we're desperate
+                    fixed = snippet.replace('\n', '\\n').replace('\r', '\\r')
+                    # But wait, this might break the structure if not careful. 
+                    # Actually, if we use response_mime_type, this should be less of an issue.
+                    return json.loads(fixed)
+                except:
+                    logger.error(f"JSON Parsing Error after cleanup attempt: {str(e)} | Snippet: {snippet[:100]}...")
+                    pass
+            
+        raise ValueError(f"Could not parse JSON from Gemini response. Raw: {text[:200]}...")
+    except Exception as e:
+        logger.error(f"Top-level JSON Parsing Error: {str(e)}")
+        raise e
 
 # --- STEP 2: POST GENERATION (Transcribed Text -> Formatted Content) ---
 @app.post("/api/generate-post")
@@ -294,6 +319,7 @@ async def generate_post_handler(request: GenerateRequest):
         response = client.models.generate_content(
             model="gemini-2.5-flash",
             config=types.GenerateContentConfig(
+                response_mime_type="application/json",
                 safety_settings=[
                     types.SafetySetting(category="HARM_CATEGORY_HATE_SPEECH", threshold="BLOCK_NONE"),
                     types.SafetySetting(category="HARM_CATEGORY_HARASSMENT", threshold="BLOCK_NONE"),
