@@ -229,9 +229,7 @@ function MainApp() {
 
           {/* Center: Social Interconnect */}
           <div className="flex space-x-6 text-zinc-500 opacity-40 hover:opacity-100 transition-opacity">
-            <a href="#" className="hover:text-tactical-amber transition-colors"><FaLinkedin size={16} /></a>
-            <a href="#" className="hover:text-tactical-amber transition-colors"><FaXTwitter size={16} /></a>
-            <a href="#" className="hover:text-tactical-amber transition-colors"><FaWhatsapp size={16} /></a>
+            <a href="https://x.com/ghostnotepro" target="_blank" rel="noopener noreferrer" className="hover:text-tactical-amber transition-colors"><FaXTwitter size={16} /></a>
           </div>
 
           {/* Right: System Ident / Gift */}
