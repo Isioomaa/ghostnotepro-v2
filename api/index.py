@@ -1,8 +1,7 @@
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from google import genai
-from google.genai import types
+import google.generativeai as genai
 import os
 import logging
 import json
@@ -74,8 +73,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))
-# Using gemini-1.5-flash as the standard model
+# Configure the Gemini API with the stable SDK
+genai.configure(api_key=os.environ.get("GEMINI_API_KEY"))
+
+# Using gemini-1.5-flash as the standard stable model
 MODEL_ID = 'gemini-1.5-flash'
 
 # Data Model for Post Generation
@@ -100,37 +101,43 @@ async def transmute_handler(file: UploadFile = File(...)):
         mime_type = file.content_type or "audio/webm"
         mime_type = mime_type.split(";")[0]
 
-        # 2. GENERATE (Inline approach - NO FILE UPLOAD)
-        response = client.models.generate_content(
-            model=MODEL_ID,
-            contents=[
-                types.Part.from_bytes(data=audio_bytes, mime_type=mime_type),
-                """You are an elite transcriptionist and Chief of Staff. Transcribe this audio accurately.
-                
-                The audio may be in any language. 
-                
-                1. TRANSCRIBE: Capture exactly what was said.
-                2. TRANSLATE: If not in English, also provide an English translation.
-                3. STATE: Classify the executive state (Reflective, Decisive, Analytical, Urgent, Strategic, Operational).
-                
-                Return ONLY a JSON object:
-                {
-                  "transcription": "The full english transcription (translated if needed)",
-                  "original_transcription": "The transcription in the original language (if not English)",
-                  "executive_state": "Reflective"
-                }
-                
-                Zero chatter. Zero markdown. Pure JSON."""
-            ],
-            config=types.GenerateContentConfig(
-                response_mime_type="application/json",
-                safety_settings=[
-                    types.SafetySetting(category="HARM_CATEGORY_HATE_SPEECH", threshold="BLOCK_NONE"),
-                    types.SafetySetting(category="HARM_CATEGORY_HARASSMENT", threshold="BLOCK_NONE"),
-                    types.SafetySetting(category="HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold="BLOCK_NONE"),
-                    types.SafetySetting(category="HARM_CATEGORY_DANGEROUS_CONTENT", threshold="BLOCK_NONE"),
-                ]
-            )
+        # 2. GENERATE using the stable google-generativeai SDK
+        model = genai.GenerativeModel(MODEL_ID)
+        
+        prompt = """You are an elite transcriptionist and Chief of Staff. Transcribe this audio accurately.
+        
+        The audio may be in any language. 
+        
+        1. TRANSCRIBE: Capture exactly what was said.
+        2. TRANSLATE: If not in English, also provide an English translation.
+        3. STATE: Classify the executive state (Reflective, Decisive, Analytical, Urgent, Strategic, Operational).
+        
+        Return ONLY a JSON object:
+        {
+          "transcription": "The full english transcription (translated if needed)",
+          "original_transcription": "The transcription in the original language (if not English)",
+          "executive_state": "Reflective"
+        }
+        
+        Zero chatter. Zero markdown. Pure JSON."""
+        
+        # Create the audio part for the model
+        audio_part = {
+            "mime_type": mime_type,
+            "data": audio_bytes
+        }
+        
+        response = model.generate_content(
+            [audio_part, prompt],
+            generation_config=genai.types.GenerationConfig(
+                response_mime_type="application/json"
+            ),
+            safety_settings=[
+                {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE"},
+                {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
+                {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE"},
+                {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"},
+            ]
         )
         
         parsed_response = clean_and_parse_json(response.text)
@@ -235,31 +242,12 @@ async def generate_post_handler(request: GenerateRequest):
             Write like history is watching.
             
             Text: {request.text}
-            """
             
-            # Use structured output for Scribe
-            schema = {
-                "type": "OBJECT",
-                "properties": {
-                    "core_thesis": {"type": "STRING", "description": "30-60 word strategic thesis statement"},
-                    "strategic_pillars": {
-                        "type": "ARRAY",
-                        "items": {
-                            "type": "OBJECT",
-                            "properties": {
-                                "title": {"type": "STRING"},
-                                "description": {"type": "STRING", "description": "1-2 sentences of COS analysis"}
-                            },
-                            "required": ["title", "description"]
-                        }
-                    },
-                    "tactical_steps": {
-                        "type": "ARRAY",
-                        "items": {"type": "STRING"}
-                    }
-                },
-                "required": ["core_thesis", "strategic_pillars", "tactical_steps"]
-            }
+            Return a JSON object with:
+            - core_thesis: 30-60 word strategic thesis statement
+            - strategic_pillars: array of objects with "title" and "description" (1-2 sentences of COS analysis)
+            - tactical_steps: array of actionable strings
+            """
         else: # strategist
             prompt = f"""
             {industry_context}
@@ -272,35 +260,29 @@ async def generate_post_handler(request: GenerateRequest):
             Transform user's voice notes into Chief of Staff-level intelligence: clear judgments, precise risk audits, and executive-ready communications. Think like you're briefing the President.
             
             Text: {request.text}
-            """
             
-            # Use structured output for Strategist
-            schema = {
-                "type": "OBJECT",
-                "properties": {
-                    "judgment": {"type": "STRING", "description": "150-250 words of deep strategic judgment"},
-                    "riskAudit": {"type": "STRING", "description": "150-250 words of risk analysis"},
-                    "emailDraft": {"type": "STRING", "description": "A ready-to-send draft starting with 'SUBJECT: '"}
-                },
-                "required": ["judgment", "riskAudit", "emailDraft"]
-            }
+            Return a JSON object with:
+            - judgment: 150-250 words of deep strategic judgment
+            - riskAudit: 150-250 words of risk analysis
+            - emailDraft: A ready-to-send draft starting with 'SUBJECT: '
+            """
         
         logger.info(f"Triggering Gemini for mode: {request.mode}")
 
-        # Generate with Gemini using response_schema
-        response = client.models.generate_content(
-            model=MODEL_ID,
-            contents=prompt,
-            config=types.GenerateContentConfig(
-                response_mime_type="application/json",
-                response_schema=schema,
-                safety_settings=[
-                    types.SafetySetting(category="HARM_CATEGORY_HATE_SPEECH", threshold="BLOCK_NONE"),
-                    types.SafetySetting(category="HARM_CATEGORY_HARASSMENT", threshold="BLOCK_NONE"),
-                    types.SafetySetting(category="HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold="BLOCK_NONE"),
-                    types.SafetySetting(category="HARM_CATEGORY_DANGEROUS_CONTENT", threshold="BLOCK_NONE"),
-                ]
-            )
+        # Generate with the stable google-generativeai SDK
+        model = genai.GenerativeModel(MODEL_ID)
+        
+        response = model.generate_content(
+            prompt,
+            generation_config=genai.types.GenerationConfig(
+                response_mime_type="application/json"
+            ),
+            safety_settings=[
+                {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE"},
+                {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
+                {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE"},
+                {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"},
+            ]
         )
         
         # Parse result
