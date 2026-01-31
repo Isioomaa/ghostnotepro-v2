@@ -1,7 +1,7 @@
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-import anthropic
+from anthropic import Anthropic
 import os
 import logging
 import json
@@ -74,7 +74,7 @@ app.add_middleware(
 )
 
 # Initialize Anthropic client
-client = anthropic.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
+client = Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
 
 # Using Claude 3.5 Sonnet as the model
 MODEL_ID = 'claude-sonnet-4-20250514'
