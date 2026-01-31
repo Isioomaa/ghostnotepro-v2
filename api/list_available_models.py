@@ -1,9 +1,11 @@
 import os
 from google import genai
 
-NEW_API_KEY = "AIzaSyCWHu0xJqXr89Qw0Wsn3UCXLLjMHCfs1HU"
+from dotenv import load_dotenv
+load_dotenv()
+NEW_API_KEY = os.environ.get("GEMINI_API_KEY")
 
-print(f"--- LISTING MODELS FOR KEY: {NEW_API_KEY[:10]}... ---")
+print(f"--- LISTING MODELS FOR KEY: {NEW_API_KEY[:10] if NEW_API_KEY else 'None'}... ---")
 
 try:
     client = genai.Client(api_key=NEW_API_KEY)

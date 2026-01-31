@@ -27,11 +27,19 @@ const AudioRecorder = ({ onUploadSuccess, t, languageName, isPro, initialAudio }
     const [synthesisStep, setSynthesisStep] = useState(0);
     const [showTransmuteButton, setShowTransmuteButton] = useState(false);
     const [savingDraft, setSavingDraft] = useState(false);
+    // Upload enhancement states
+    const [isDragging, setIsDragging] = useState(false);
+    const [fileDuration, setFileDuration] = useState(null);
+    const [filePreviewUrl, setFilePreviewUrl] = useState(null);
 
     const inputRef = useRef(null);
     const mediaRecorderRef = useRef(null);
     const audioChunksRef = useRef([]);
     const timerRef = useRef(null);
+
+    // Constants for file validation
+    const MAX_FILE_SIZE = 25 * 1024 * 1024; // 25MB
+    const ACCEPTED_FORMATS = ['audio/mpeg', 'audio/wav', 'audio/mp4', 'audio/x-m4a', 'audio/webm', 'audio/ogg'];
 
     const SYNTHESIS_STEPS = [
         t.messages.uploading,
@@ -107,11 +115,109 @@ const AudioRecorder = ({ onUploadSuccess, t, languageName, isPro, initialAudio }
         );
     };
 
+    // Format file size for display
+    const formatFileSize = (bytes) => {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    };
+
+    // Validate file format and size
+    const validateFile = (file) => {
+        // Check file size
+        if (file.size > MAX_FILE_SIZE) {
+            setError(`File too large. Maximum size is 25MB. Your file is ${formatFileSize(file.size)}.`);
+            return false;
+        }
+
+        // Check file format
+        const fileExtension = file.name.toLowerCase().split('.').pop();
+        const validExtensions = ['mp3', 'wav', 'm4a', 'webm', 'ogg'];
+        const isValidType = ACCEPTED_FORMATS.some(format => file.type.includes(format.split('/')[1])) ||
+            validExtensions.includes(fileExtension);
+
+        if (!isValidType) {
+            setError(`Invalid file format. Accepted formats: MP3, WAV, M4A, WebM, OGG`);
+            return false;
+        }
+
+        return true;
+    };
+
+    // Get audio duration from file
+    const getAudioDuration = (file) => {
+        return new Promise((resolve) => {
+            const audio = new Audio();
+            const url = URL.createObjectURL(file);
+            audio.src = url;
+            audio.onloadedmetadata = () => {
+                resolve(audio.duration);
+            };
+            audio.onerror = () => {
+                resolve(null);
+            };
+        });
+    };
+
+    // Process selected file
+    const processFile = async (selectedFile) => {
+        if (!validateFile(selectedFile)) {
+            return;
+        }
+
+        setFile(selectedFile);
+        setAudioBlob(null);
+        setError(null);
+
+        // Create preview URL
+        const url = URL.createObjectURL(selectedFile);
+        setFilePreviewUrl(url);
+
+        // Get duration
+        const duration = await getAudioDuration(selectedFile);
+        if (duration) {
+            setFileDuration(duration);
+        }
+    };
+
+    // Cleanup preview URL when file changes
+    useEffect(() => {
+        return () => {
+            if (filePreviewUrl) {
+                URL.revokeObjectURL(filePreviewUrl);
+            }
+        };
+    }, [filePreviewUrl]);
+
     const handleFileChange = (e) => {
         if (e.target.files && e.target.files[0]) {
-            setFile(e.target.files[0]);
-            setAudioBlob(null);
-            setError(null);
+            processFile(e.target.files[0]);
+        }
+    };
+
+    // Drag & Drop handlers
+    const handleDragOver = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragging(true);
+    };
+
+    const handleDragLeave = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragging(false);
+    };
+
+    const handleDrop = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragging(false);
+
+        const droppedFiles = e.dataTransfer.files;
+        if (droppedFiles && droppedFiles[0]) {
+            processFile(droppedFiles[0]);
         }
     };
 
@@ -212,7 +318,8 @@ const AudioRecorder = ({ onUploadSuccess, t, languageName, isPro, initialAudio }
                 console.log('✅ Transcription received. Industry:', industry);
 
                 // Calculate Emphasis Audit
-                const durationSeconds = recordingTime || 60; // Fallback if 0 (upload mode)
+                // Use recordingTime for recordings, fileDuration for uploads, fallback to 60s
+                const durationSeconds = recordingTime || (fileDuration ? Math.round(fileDuration) : 60);
                 const wordCount = textValue.trim().split(/\s+/).length;
                 const wpm = Math.round(wordCount / (durationSeconds / 60));
 
@@ -376,36 +483,78 @@ const AudioRecorder = ({ onUploadSuccess, t, languageName, isPro, initialAudio }
                         ) : null}
                     </div>
                 ) : (
-                    <div className="flex flex-col items-center space-y-6">
+                    <div className="flex flex-col items-center space-y-6 w-full max-w-sm">
                         <input
                             ref={inputRef}
                             type="file"
-                            accept="audio/*"
+                            accept=".mp3,.wav,.m4a,.webm,.ogg,audio/mpeg,audio/wav,audio/mp4,audio/webm,audio/ogg"
                             onChange={handleFileChange}
                             className="hidden"
                         />
 
                         {!file ? (
-                            <>
-                                <button
-                                    onClick={onButtonClick}
-                                    className="w-32 h-32 rounded-full border border-[#A88E65] flex items-center justify-center transition-all hover:bg-[#A88E65]/5"
-                                >
-                                    <svg className="w-8 h-8 text-[#A88E65]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                                    </svg>
-                                </button>
-                                <p className="text-[#cccccc] text-sm">{t.buttons.select_file}</p>
-                            </>
-                        ) : (
-                            <div className="text-center space-y-4">
-                                <div className="w-32 h-32 rounded-full border border-[#A88E65] flex items-center justify-center">
-                                    <svg className="w-8 h-8 text-[#A88E65]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M5 13l4 4L19 7" />
+                            <div
+                                onClick={onButtonClick}
+                                onDragOver={handleDragOver}
+                                onDragLeave={handleDragLeave}
+                                onDrop={handleDrop}
+                                className={`w-full border-2 border-dashed rounded-2xl p-8 transition-all cursor-pointer flex flex-col items-center space-y-4
+                                    ${isDragging
+                                        ? 'border-[#A88E65] bg-[#A88E65]/10'
+                                        : 'border-[#444] hover:border-[#A88E65]/50 hover:bg-[#A88E65]/5'
+                                    }`}
+                            >
+                                <div className="w-16 h-16 rounded-full border border-[#A88E65] flex items-center justify-center">
+                                    <svg className="w-7 h-7 text-[#A88E65]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                                     </svg>
                                 </div>
-                                <p className="text-[#F9F7F5] text-sm font-light">{file.name}</p>
-                                <button onClick={() => setFile(null)} className="text-[#999] text-sm hover:text-[#F9F7F5]">{t.buttons.remove}</button>
+                                <div className="text-center space-y-2">
+                                    <p className="text-[#F9F7F5] text-sm font-medium">
+                                        {isDragging ? 'Drop your audio file here' : 'Drag & drop or click to upload'}
+                                    </p>
+                                    <p className="text-[#666] text-xs">
+                                        MP3, WAV, M4A, WebM, OGG • Max 25MB
+                                    </p>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="w-full bg-[#1a1a1a] rounded-2xl p-6 border border-[#333] space-y-4">
+                                <div className="flex items-center space-x-4">
+                                    <div className="w-12 h-12 rounded-full bg-[#A88E65]/20 flex items-center justify-center flex-shrink-0">
+                                        <svg className="w-6 h-6 text-[#A88E65]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
+                                        </svg>
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-[#F9F7F5] text-sm font-medium truncate">{file.name}</p>
+                                        <div className="flex items-center space-x-3 text-[#666] text-xs mt-1">
+                                            <span>{formatFileSize(file.size)}</span>
+                                            {fileDuration && (
+                                                <>
+                                                    <span>•</span>
+                                                    <span>{formatTime(Math.round(fileDuration))}</span>
+                                                </>
+                                            )}
+                                        </div>
+                                    </div>
+                                    <button
+                                        onClick={(e) => { e.stopPropagation(); setFile(null); setFileDuration(null); }}
+                                        className="p-2 text-[#666] hover:text-[#F9F7F5] transition-colors"
+                                    >
+                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M6 18L18 6M6 6l12 12" />
+                                        </svg>
+                                    </button>
+                                </div>
+
+                                {/* Audio preview player */}
+                                <audio
+                                    controls
+                                    src={filePreviewUrl}
+                                    className="w-full h-10 opacity-70 hover:opacity-100 transition-opacity"
+                                    style={{ filter: 'sepia(20%) saturate(70%) hue-rotate(10deg)' }}
+                                />
                             </div>
                         )}
                     </div>
