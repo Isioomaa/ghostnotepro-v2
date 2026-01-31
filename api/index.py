@@ -1,13 +1,13 @@
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-import google.generativeai as genai
+import anthropic
 import os
 import logging
 import json
 import re
-from typing import Literal, List, Optional
-from pydantic import BaseModel, Field
+import base64
+from typing import Literal
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -73,11 +73,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Configure the Gemini API with the stable SDK
-genai.configure(api_key=os.environ.get("GEMINI_API_KEY"))
+# Initialize Anthropic client
+client = anthropic.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
 
-# Using gemini-1.5-flash as the standard stable model
-MODEL_ID = 'gemini-1.5-flash'
+# Using Claude 3.5 Sonnet as the model
+MODEL_ID = 'claude-sonnet-4-20250514'
 
 # Data Model for Post Generation
 class GenerateRequest(BaseModel):
@@ -96,13 +96,25 @@ async def transmute_handler(file: UploadFile = File(...)):
     try:
         logger.info(f"Scribe receiving audio: {file.filename}")
         
-        # 1. READ AUDIO DATA (In-memory, bypasses read-only filesystem issues)
+        # 1. READ AUDIO DATA
         audio_bytes = await file.read()
         mime_type = file.content_type or "audio/webm"
         mime_type = mime_type.split(";")[0]
-
-        # 2. GENERATE using the stable google-generativeai SDK
-        model = genai.GenerativeModel(MODEL_ID)
+        
+        # Map mime types to Anthropic-supported formats
+        mime_mapping = {
+            "audio/webm": "audio/webm",
+            "audio/mpeg": "audio/mpeg",
+            "audio/mp3": "audio/mpeg",
+            "audio/wav": "audio/wav",
+            "audio/mp4": "audio/mp4",
+            "audio/x-m4a": "audio/mp4",
+            "audio/ogg": "audio/ogg"
+        }
+        anthropic_mime = mime_mapping.get(mime_type, "audio/webm")
+        
+        # Encode audio to base64
+        audio_base64 = base64.standard_b64encode(audio_bytes).decode("utf-8")
         
         prompt = """You are an elite transcriptionist and Chief of Staff. Transcribe this audio accurately.
         
@@ -112,7 +124,7 @@ async def transmute_handler(file: UploadFile = File(...)):
         2. TRANSLATE: If not in English, also provide an English translation.
         3. STATE: Classify the executive state (Reflective, Decisive, Analytical, Urgent, Strategic, Operational).
         
-        Return ONLY a JSON object:
+        Return ONLY a JSON object (no markdown, no code blocks):
         {
           "transcription": "The full english transcription (translated if needed)",
           "original_transcription": "The transcription in the original language (if not English)",
@@ -121,26 +133,33 @@ async def transmute_handler(file: UploadFile = File(...)):
         
         Zero chatter. Zero markdown. Pure JSON."""
         
-        # Create the audio part for the model
-        audio_part = {
-            "mime_type": mime_type,
-            "data": audio_bytes
-        }
-        
-        response = model.generate_content(
-            [audio_part, prompt],
-            generation_config=genai.types.GenerationConfig(
-                response_mime_type="application/json"
-            ),
-            safety_settings=[
-                {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE"},
-                {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
-                {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE"},
-                {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"},
+        # 2. GENERATE using Anthropic Claude with audio support
+        response = client.messages.create(
+            model=MODEL_ID,
+            max_tokens=4096,
+            messages=[
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": prompt
+                        },
+                        {
+                            "type": "document",
+                            "source": {
+                                "type": "base64",
+                                "media_type": anthropic_mime,
+                                "data": audio_base64
+                            }
+                        }
+                    ]
+                }
             ]
         )
         
-        parsed_response = clean_and_parse_json(response.text)
+        response_text = response.content[0].text
+        parsed_response = clean_and_parse_json(response_text)
         
         # 3. DETECT INDUSTRY & APPLY CORRECTIONS
         transcription = parsed_response.get("transcription", "")
@@ -159,7 +178,7 @@ async def transmute_handler(file: UploadFile = File(...)):
         return {"status": "error", "message": str(e), "details": error_details}
 
 def clean_and_parse_json(text: str):
-    """Robust helper to extract JSON from Gemini's response."""
+    """Robust helper to extract JSON from Claude's response."""
     try:
         # If it's already a dict (shouldn't happen with .text but for safety)
         if isinstance(text, dict):
@@ -174,8 +193,7 @@ def clean_and_parse_json(text: str):
         # 2. Strip markdown blocks
         clean_text = re.sub(r'```json\s*|\s*```', '', text, flags=re.MULTILINE).strip()
         
-        # 3. Handle problematic raw newlines in strings by finding content between brackets/braces
-        # But first try the cleaned text
+        # 3. Try parsing cleaned text
         try:
             return json.loads(clean_text)
         except:
@@ -190,19 +208,14 @@ def clean_and_parse_json(text: str):
             try:
                 return json.loads(snippet)
             except Exception as e:
-                # If it fails here, it might be due to unescaped newlines in JSON strings
-                # Let's try to replace common problematic patterns if it still fails
                 try:
-                    # Very aggressive: try to fix common JSON errors if we're desperate
                     fixed = snippet.replace('\n', '\\n').replace('\r', '\\r')
-                    # But wait, this might break the structure if not careful. 
-                    # Actually, if we use response_mime_type, this should be less of an issue.
                     return json.loads(fixed)
                 except:
                     logger.error(f"JSON Parsing Error after cleanup attempt: {str(e)} | Snippet: {snippet[:100]}...")
                     pass
             
-        raise ValueError(f"Could not parse JSON from Gemini response. Raw: {text[:200]}...")
+        raise ValueError(f"Could not parse JSON from Claude response. Raw: {text[:200]}...")
     except Exception as e:
         logger.error(f"Top-level JSON Parsing Error: {str(e)}")
         raise e
@@ -243,7 +256,7 @@ async def generate_post_handler(request: GenerateRequest):
             
             Text: {request.text}
             
-            Return a JSON object with:
+            Return ONLY a JSON object (no markdown, no code blocks) with:
             - core_thesis: 30-60 word strategic thesis statement
             - strategic_pillars: array of objects with "title" and "description" (1-2 sentences of COS analysis)
             - tactical_steps: array of actionable strings
@@ -261,32 +274,30 @@ async def generate_post_handler(request: GenerateRequest):
             
             Text: {request.text}
             
-            Return a JSON object with:
+            Return ONLY a JSON object (no markdown, no code blocks) with:
             - judgment: 150-250 words of deep strategic judgment
             - riskAudit: 150-250 words of risk analysis
             - emailDraft: A ready-to-send draft starting with 'SUBJECT: '
             """
         
-        logger.info(f"Triggering Gemini for mode: {request.mode}")
+        logger.info(f"Triggering Claude for mode: {request.mode}")
 
-        # Generate with the stable google-generativeai SDK
-        model = genai.GenerativeModel(MODEL_ID)
-        
-        response = model.generate_content(
-            prompt,
-            generation_config=genai.types.GenerationConfig(
-                response_mime_type="application/json"
-            ),
-            safety_settings=[
-                {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE"},
-                {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
-                {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE"},
-                {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"},
+        # Generate with Anthropic Claude
+        response = client.messages.create(
+            model=MODEL_ID,
+            max_tokens=4096,
+            messages=[
+                {
+                    "role": "user",
+                    "content": prompt
+                }
             ]
         )
         
+        response_text = response.content[0].text
+        
         # Parse result
-        parsed_content = clean_and_parse_json(response.text)
+        parsed_content = clean_and_parse_json(response_text)
         
         return {
             "status": "success", 
