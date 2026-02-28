@@ -2,7 +2,9 @@ from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from anthropic import Anthropic
+from openai import OpenAI
 import os
+import io
 import logging
 import json
 import re
@@ -76,6 +78,9 @@ app.add_middleware(
 # Initialize Anthropic client
 client = Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
 
+# Initialize OpenAI client (for Whisper transcription)
+openai_client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
+
 # Using Claude 3.5 Sonnet as the model
 MODEL_ID = 'claude-sonnet-4-20250514'
 
@@ -101,59 +106,61 @@ async def transmute_handler(file: UploadFile = File(...)):
         mime_type = file.content_type or "audio/webm"
         mime_type = mime_type.split(";")[0]
         
-        # Map mime types to Anthropic-supported formats
-        mime_mapping = {
-            "audio/webm": "audio/webm",
-            "audio/mpeg": "audio/mpeg",
-            "audio/mp3": "audio/mpeg",
-            "audio/wav": "audio/wav",
-            "audio/mp4": "audio/mp4",
-            "audio/x-m4a": "audio/mp4",
-            "audio/ogg": "audio/ogg"
+        # Map content types to file extensions for Whisper
+        ext_mapping = {
+            "audio/webm": "webm",
+            "audio/mpeg": "mp3",
+            "audio/mp3": "mp3",
+            "audio/wav": "wav",
+            "audio/mp4": "m4a",
+            "audio/x-m4a": "m4a",
+            "audio/ogg": "ogg",
         }
-        anthropic_mime = mime_mapping.get(mime_type, "audio/webm")
+        file_ext = ext_mapping.get(mime_type, "webm")
         
-        # Encode audio to base64
-        audio_base64 = base64.standard_b64encode(audio_bytes).decode("utf-8")
+        # 2. TRANSCRIBE with OpenAI Whisper
+        logger.info(f"Sending audio to Whisper ({mime_type}, {len(audio_bytes)} bytes)")
+        audio_file = io.BytesIO(audio_bytes)
+        audio_file.name = f"audio.{file_ext}"
         
-        prompt = """You are an elite transcriptionist and Chief of Staff. Transcribe this audio accurately.
+        whisper_response = openai_client.audio.transcriptions.create(
+            model="whisper-1",
+            file=audio_file,
+            response_format="verbose_json",
+        )
         
-        The audio may be in any language. 
+        raw_transcription = whisper_response.text
+        detected_language = getattr(whisper_response, "language", "en")
+        logger.info(f"Whisper transcription complete. Language: {detected_language}, Length: {len(raw_transcription)} chars")
         
-        1. TRANSCRIBE: Capture exactly what was said.
-        2. TRANSLATE: If not in English, also provide an English translation.
-        3. STATE: Classify the executive state (Reflective, Decisive, Analytical, Urgent, Strategic, Operational).
+        # 3. ANALYZE with Claude (executive state + translation if needed)
+        analysis_prompt = f"""You are an elite Chief of Staff. Analyze this transcription.
+
+Transcription: \"\"\"
+{raw_transcription}
+\"\"\"
+
+Detected language: {detected_language}
+
+1. If the transcription is NOT in English, provide an English translation.
+2. Classify the executive state: Reflective, Decisive, Analytical, Urgent, Strategic, or Operational.
+
+Return ONLY a JSON object (no markdown, no code blocks):
+{{
+  "transcription": "The English version of the transcription (translated if needed, otherwise the original)",
+  "original_transcription": "The original transcription if it was not in English, otherwise omit this field",
+  "executive_state": "Reflective"
+}}
+
+Zero chatter. Zero markdown. Pure JSON."""
         
-        Return ONLY a JSON object (no markdown, no code blocks):
-        {
-          "transcription": "The full english transcription (translated if needed)",
-          "original_transcription": "The transcription in the original language (if not English)",
-          "executive_state": "Reflective"
-        }
-        
-        Zero chatter. Zero markdown. Pure JSON."""
-        
-        # 2. GENERATE using Anthropic Claude with audio support
         response = client.messages.create(
             model=MODEL_ID,
             max_tokens=4096,
             messages=[
                 {
                     "role": "user",
-                    "content": [
-                        {
-                            "type": "text",
-                            "text": prompt
-                        },
-                        {
-                            "type": "document",
-                            "source": {
-                                "type": "base64",
-                                "media_type": anthropic_mime,
-                                "data": audio_base64
-                            }
-                        }
-                    ]
+                    "content": analysis_prompt
                 }
             ]
         )
@@ -161,7 +168,7 @@ async def transmute_handler(file: UploadFile = File(...)):
         response_text = response.content[0].text
         parsed_response = clean_and_parse_json(response_text)
         
-        # 3. DETECT INDUSTRY & APPLY CORRECTIONS
+        # 4. DETECT INDUSTRY & APPLY CORRECTIONS
         transcription = parsed_response.get("transcription", "")
         industry = detect_industry(transcription)
         corrected_transcription = apply_glossary_corrections(transcription, industry)
