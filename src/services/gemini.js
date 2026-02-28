@@ -48,7 +48,22 @@ export const transmuteAudio = async (audioBlob, language) => {
     }
 };
 
-export const generateExecutiveSuite = async (text, analysis, language, mode = 'scribe', isPro = false, industry = null) => {
+export const generateTitle = async (transcript) => {
+    try {
+        const response = await fetch(`${API_BASE_URL}/generate-title`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ transcript })
+        });
+        const data = await response.json();
+        return data.title || "Voice Note";
+    } catch (error) {
+        console.error("Title generation error:", error);
+        return "Voice Note";
+    }
+};
+
+export const generateExecutiveSuite = async (text, analysis, language, mode = 'scribe', isPro = false, industry = null, emphasis_signals = []) => {
     // Note: analysis, language might be unused in backend but keeping signature compatible if needed, 
     // or we can clean up. The backend only uses `text`, `mode`, `isPro`.
 
@@ -62,7 +77,8 @@ export const generateExecutiveSuite = async (text, analysis, language, mode = 's
                 text,
                 mode,
                 isPro,
-                industry
+                industry,
+                emphasis_signals
             })
         });
 

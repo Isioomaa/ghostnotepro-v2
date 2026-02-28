@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { TRANSLATIONS } from '../constants/languages';
+import { renderMarkdownBlock } from '../utils/renderMarkdown';
 
 const StrategicBriefView = () => {
     const { id } = useParams();
@@ -116,9 +117,9 @@ const StrategicBriefView = () => {
                         <>
                             <section>
                                 <h3 className="font-sans font-bold text-[10px] uppercase tracking-[0.3em] text-gray-400 mb-6">{t.strategist?.judgment || "Executive Judgment"}</h3>
-                                <p className="font-playfair font-medium text-2xl md:text-3xl leading-relaxed text-black italic">
-                                    {content.executive_judgement || content.judgment}
-                                </p>
+                                <div className="font-playfair font-medium text-2xl md:text-3xl leading-relaxed text-black italic">
+                                    {renderMarkdownBlock(content.executive_judgement || content.judgment)}
+                                </div>
                             </section>
 
                             <hr className="border-gray-200" />
@@ -126,7 +127,7 @@ const StrategicBriefView = () => {
                             <section>
                                 <h3 className="font-sans font-bold text-[10px] uppercase tracking-[0.3em] text-red-800/60 mb-6">{t.strategist?.risk_audit || "Risk Audit"}</h3>
                                 <div className="bg-red-50/50 p-8 md:p-12 border-l-4 border-red-800 text-red-900 text-lg md:text-xl font-medium leading-relaxed italic">
-                                    {content.risk_audit || content.riskAudit}
+                                    {renderMarkdownBlock(content.risk_audit || content.riskAudit)}
                                 </div>
                             </section>
 

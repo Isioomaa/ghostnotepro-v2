@@ -3,6 +3,8 @@ import { motion } from 'framer-motion';
 import { FaCopy, FaShareAlt, FaChevronDown, FaLock, FaListUl } from 'react-icons/fa';
 import { generateExecutiveSuite, updateDraft } from '../services/gemini';
 import { TRANSLATIONS } from '../constants/languages';
+import { renderMarkdownBlock } from '../utils/renderMarkdown';
+import { exportToPDF } from '../utils/exportPDF';
 import ShareActions from './ShareActions';
 import PaywallModal from './PaywallModal';
 
@@ -68,7 +70,7 @@ const SynthesisResult = ({ text, analysis, languageName, currentLang, t, onReset
             console.log('--- Industry Context:', industry);
 
             // Always generate Scribe content (base layer) using edited text
-            const scribePromise = generateExecutiveSuite(editableText, analysis, languageName, 'scribe', isPro, industry);
+            const scribePromise = generateExecutiveSuite(editableText, analysis, languageName, 'scribe', isPro, industry, analysis?.emphasis_signals);
 
             // If Pro, also generate Strategist content
             if (isPro) {
@@ -78,7 +80,7 @@ const SynthesisResult = ({ text, analysis, languageName, currentLang, t, onReset
             }
 
             const strategistPromise = isPro
-                ? generateExecutiveSuite(editableText, analysis, languageName, 'strategist', isPro, industry)
+                ? generateExecutiveSuite(editableText, analysis, languageName, 'strategist', isPro, industry, analysis?.emphasis_signals)
                 : Promise.resolve({});
 
             const results = await Promise.allSettled([scribePromise, strategistPromise]);
@@ -116,15 +118,40 @@ const SynthesisResult = ({ text, analysis, languageName, currentLang, t, onReset
             setData(combinedResult);
             if (strategistError) setError(strategistError);
 
-            // Auto-update draft if we have an active draft ID
+            // Auto-save output to drafts for retrieval
             if (draftId) {
                 console.log(`💾 Auto-updating draft ${draftId} with generated content.`);
                 updateDraft(draftId, {
                     content: combinedResult,
-                    // Update status to 'complete'? Or just let the presence of content define it.
-                    // We could add a 'last_updated' timestamp
+                    transcript: editableText,
                     last_updated: new Date().toISOString()
                 });
+            } else {
+                // Create a new saved output entry (direct transmutation without prior draft)
+                console.log('💾 Auto-saving generated output as new entry.');
+                const { generateTitle } = await import('../services/gemini');
+                const aiTitle = await generateTitle(editableText);
+
+                const newEntry = {
+                    id: Date.now(),
+                    title: aiTitle,
+                    transcript: editableText,
+                    content: combinedResult,
+                    analysis: analysis,
+                    industry: industry,
+                    tag: "✨ Transmuted",
+                    created_at: new Date().toISOString(),
+                    last_updated: new Date().toISOString()
+                };
+
+                try {
+                    const existing = JSON.parse(localStorage.getItem('ghostnote_drafts') || '[]');
+                    const updated = [newEntry, ...existing];
+                    localStorage.setItem('ghostnote_drafts', JSON.stringify(updated));
+                    console.log('✅ Output saved:', aiTitle);
+                } catch (err) {
+                    console.error('Failed to save output:', err);
+                }
             }
 
         } catch (err) {
@@ -257,6 +284,19 @@ const SynthesisResult = ({ text, analysis, languageName, currentLang, t, onReset
                                 </p>
                             </div>
                         </div>
+
+                        {analysis.emphasis_signals && analysis.emphasis_signals.length > 0 && (
+                            <div className="mt-6 pt-6 border-t border-white/5">
+                                <p className="text-[10px] uppercase tracking-widest text-gray-500 mb-3 text-center">High-Emphasis Signals</p>
+                                <div className="flex flex-wrap justify-center gap-2">
+                                    {analysis.emphasis_signals.map((signal, idx) => (
+                                        <span key={idx} className="px-3 py-1 bg-white/5 border border-white/10 rounded-full text-[10px] text-white font-medium uppercase tracking-wider">
+                                            {signal}
+                                        </span>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
                     </div>
                 )}
 
@@ -405,7 +445,7 @@ const SynthesisResult = ({ text, analysis, languageName, currentLang, t, onReset
                                             <h4 className="font-sans font-bold uppercase tracking-widest text-sm md:text-xs text-tactical-amber">{localT.strategist?.judgment || "EXECUTIVE JUDGMENT"}</h4>
                                         </div>
                                         <div className="font-sans text-lg md:text-xl font-medium leading-snug text-white">
-                                            {proData.judgment || proData.executive_judgement}
+                                            {renderMarkdownBlock(proData.judgment || proData.executive_judgement)}
                                         </div>
                                     </motion.div>
                                 )}
@@ -422,8 +462,8 @@ const SynthesisResult = ({ text, analysis, languageName, currentLang, t, onReset
                                             <span className="pulse-dot"></span>
                                             <h4 className="font-sans font-bold uppercase tracking-widest text-sm md:text-xs text-red-400">{localT.strategist?.risk_audit || "RISK AUDIT"}</h4>
                                         </div>
-                                        <div className="font-mono text-xs md:text-sm text-red-400 bg-red-900/20 border border-red-900/30 p-5 md:p-8 rounded-sm leading-relaxed whitespace-pre-wrap">
-                                            {proData.riskAudit || proData.risk_audit}
+                                        <div className="font-mono text-xs md:text-sm text-red-400 bg-red-900/20 border border-red-900/30 p-5 md:p-8 rounded-sm leading-relaxed">
+                                            {renderMarkdownBlock(proData.riskAudit || proData.risk_audit)}
                                         </div>
                                     </motion.div>
                                 )}
@@ -493,7 +533,7 @@ const SynthesisResult = ({ text, analysis, languageName, currentLang, t, onReset
                                                             <p className="text-[10px] uppercase tracking-widest text-white/40">Subject</p>
                                                             <p className="font-sans font-bold text-white text-base md:text-lg">{subject}</p>
                                                             <p className="text-[10px] uppercase tracking-widest text-white/40 mt-6">Message Body</p>
-                                                            <p className="text-white/80 text-sm md:text-base whitespace-pre-wrap leading-relaxed font-serif italic">{body}</p>
+                                                            <div className="text-white/80 text-sm md:text-base leading-relaxed font-serif italic">{renderMarkdownBlock(body)}</div>
                                                         </div>
                                                     </>
                                                 );
@@ -647,9 +687,9 @@ const SynthesisResult = ({ text, analysis, languageName, currentLang, t, onReset
                 </div>
             </div>
 
-            {/* Museum Mode: Archive Action */}
+            {/* Action Buttons: Archive + PDF Export */}
             {data && (
-                <div className="flex justify-center mb-12 mt-8 md:mt-0">
+                <div className="flex flex-col md:flex-row justify-center items-center gap-4 mb-12 mt-8 md:mt-0">
                     <motion.button
                         onClick={() => {
                             const id = `cos_${Date.now().toString(36)}_${Math.random().toString(36).substr(2, 5)}`;
@@ -676,6 +716,24 @@ const SynthesisResult = ({ text, analysis, languageName, currentLang, t, onReset
                         whileTap={{ scale: 0.98 }}
                     >
                         {localT.labels?.archive_share || "ARCHIVE TO MUSEUM"}
+                    </motion.button>
+
+                    <motion.button
+                        onClick={() => {
+                            exportToPDF(data, activeTab, {
+                                transcript: text,
+                                analysis: analysis,
+                                industry: industry
+                            });
+                            onShowToast("PDF export ready");
+                        }}
+                        className="w-full md:w-auto bg-transparent text-tactical-amber border border-tactical-amber/40 px-8 py-4 font-sans text-xs font-bold uppercase tracking-[0.2em] hover:bg-tactical-amber hover:text-black transition-all shadow-lg flex items-center justify-center space-x-2"
+                        whileTap={{ scale: 0.98 }}
+                    >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        <span>EXPORT PDF</span>
                     </motion.button>
                 </div>
             )}

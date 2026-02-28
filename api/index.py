@@ -9,7 +9,7 @@ import logging
 import json
 import re
 import base64
-from typing import Literal
+from typing import Literal, List
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -90,10 +90,34 @@ class GenerateRequest(BaseModel):
     mode: Literal["scribe", "strategist"]
     isPro: bool = False
     industry: str = None
+    emphasis_signals: List[str] = []
+
+class TitleRequest(BaseModel):
+    transcript: str
 
 @app.get("/api/ping")
 def ping():
     return {"status": "pong"}
+
+# --- GENERATE TITLE: Create a short 3-5 word summary title ---
+@app.post("/api/generate-title")
+async def generate_title_handler(request: TitleRequest):
+    try:
+        response = client.messages.create(
+            model=MODEL_ID,
+            max_tokens=30,
+            messages=[
+                {
+                    "role": "user",
+                    "content": f"Generate a concise 3 to 5 word title that summarizes this voice note transcript. Return ONLY the title text, nothing else. No quotes, no punctuation at the end.\n\nTranscript: \"\"\"\n{request.transcript[:500]}\n\"\"\""
+                }
+            ]
+        )
+        title = response.content[0].text.strip().strip('"').strip("'")
+        return {"status": "success", "title": title}
+    except Exception as e:
+        logger.error(f"Title generation error: {str(e)}")
+        return {"status": "error", "title": "Voice Note"}
 
 # --- STEP 1: THE SCRIBE (Audio -> Core Thesis) ---
 @app.post("/api/transmute")
@@ -248,9 +272,15 @@ async def generate_post_handler(request: GenerateRequest):
             When analyzing the transcription, interpret technical terms and abbreviations through the lens of the {request.industry} sector.
             """
 
+        emphasis_context = ""
+        if request.emphasis_signals:
+            signals_str = ", ".join(request.emphasis_signals)
+            emphasis_context = f"\nCRITICAL: The following concepts were identified as HIGH EMPHASIS in the user's voice note: {signals_str}. Ensure these themes are core to your analysis and the resulting output reflects their importance.\n"
+
         if request.mode == "scribe":
             prompt = f"""
             {industry_context}
+            {emphasis_context}
             You are a Pulitzer Prize-winning journalist and presidential speechwriter combined. Transform chaotic voice notes into Wall Street Journal-caliber prose with the gravitas of State of the Union addresses. 
 
             Your output must have:
@@ -271,6 +301,7 @@ async def generate_post_handler(request: GenerateRequest):
         else: # strategist
             prompt = f"""
             {industry_context}
+            {emphasis_context}
             You are an acclaimed White House Chief of Staff - the highest level executive advisor. You possess:
             - Supreme intelligence across all subjects (geopolitics, economics, technology, culture, strategy)
             - Razor-sharp judgment and risk assessment capabilities

@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { getUsageCount, incrementUsageCount, LIMIT } from '../utils/usageTracker';
-import { transmuteAudio, saveDraft } from '../services/gemini';
+import { transmuteAudio, saveDraft, generateTitle } from '../services/gemini';
+import { extractHighEmphasisSignals } from '../utils/textAnalysis';
 import PaywallModal from './PaywallModal';
 
 export const RAW_DRAFT_PLACEHOLDER = "Audio recording saved as draft. Transmute to see insights.";
@@ -323,6 +324,9 @@ const AudioRecorder = ({ onUploadSuccess, t, languageName, isPro, initialAudio }
                 const wordCount = textValue.trim().split(/\s+/).length;
                 const wpm = Math.round(wordCount / (durationSeconds / 60));
 
+                // Get high-emphasis signals from transcript
+                const emphasisSignals = extractHighEmphasisSignals(textValue);
+
                 let intensity = "Medium";
                 if (wpm < 100) intensity = "Low";
                 if (wpm > 150) intensity = "High";
@@ -336,7 +340,8 @@ const AudioRecorder = ({ onUploadSuccess, t, languageName, isPro, initialAudio }
                         duration: formattedDuration,
                         wpm: wpm,
                         intensity: intensity,
-                        executive_state: executive_state || "Reflective"
+                        executive_state: executive_state || "Reflective",
+                        emphasis_signals: emphasisSignals
                     },
                     industry: industry || "General Business"
                 };
@@ -359,6 +364,25 @@ const AudioRecorder = ({ onUploadSuccess, t, languageName, isPro, initialAudio }
 
             // Increment usage count AFTER successful generation
             incrementUsageCount();
+
+            // Fire-and-forget: generate AI title and update the most recent draft
+            if (textValue) {
+                generateTitle(textValue).then(title => {
+                    try {
+                        const drafts = JSON.parse(localStorage.getItem('ghostnote_drafts') || '[]');
+                        if (drafts.length > 0) {
+                            // Update the most recent draft's title
+                            drafts[0].title = title;
+                            drafts[0].transcript = textValue;
+                            localStorage.setItem('ghostnote_drafts', JSON.stringify(drafts));
+                            console.log('📝 Draft title updated:', title);
+                        }
+                    } catch (err) {
+                        console.error('Failed to update draft title:', err);
+                    }
+                });
+            }
+
             onUploadSuccess(textValue, selectedPlatforms, analysisData);
         } catch (err) {
             console.error(err);
@@ -594,7 +618,7 @@ const AudioRecorder = ({ onUploadSuccess, t, languageName, isPro, initialAudio }
 
                                     const newDraft = {
                                         id: Date.now(),
-                                        title: file ? file.name : `Voice Note ${new Date().toLocaleTimeString()}`,
+                                        title: file ? file.name : "Untitled Voice Note",
                                         transcript: RAW_DRAFT_PLACEHOLDER,
                                         tag: "💭 Brain Dump",
                                         created_at: new Date().toISOString(),
