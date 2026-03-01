@@ -285,6 +285,14 @@ const SynthesisResult = ({ text, analysis, languageName, currentLang, t, onReset
                             </div>
                         </div>
 
+                        {(!analysis.emphasis_signals || analysis.emphasis_signals.length === 0) && (
+                            <div className="mt-6 text-center">
+                                <p className="text-[10px] text-gray-500 italic tracking-wide">
+                                    Record longer for deeper emphasis analysis.
+                                </p>
+                            </div>
+                        )}
+
                         {analysis.emphasis_signals && analysis.emphasis_signals.length > 0 && (
                             <div className="mt-6 pt-6 border-t border-white/5">
                                 <p className="text-[10px] uppercase tracking-widest text-gray-500 mb-3 text-center">High-Emphasis Signals</p>
