@@ -58,14 +58,18 @@ const StrategicBriefView = () => {
         );
     }
 
+    const content = data.content || data;
+    const audit = data.audit || {};
     const isStrategist = !!(content.executive_judgement || content.judgment);
     const scribeSnippet = content.core_thesis || (content.strategic_pillars?.[0]?.description) || "";
-
+    const strategistJudgment = content.executive_judgement || content.judgment;
+    const strategistRisk = content.risk_audit || content.riskAudit;
+    const emailDraft = content.email_draft || content.emailDraft;
 
     return (
         <div className="min-h-screen bg-[#FFFEF7] text-gray-900 py-12 px-6 selection:bg-[#D4AF37] selection:text-white print:bg-white print:p-0 fade-in">
             <Helmet>
-                <title>{content.core_thesis || "Strategic Intelligence Brief | GhostNote Pro"}</title>
+                <title>{content.core_thesis || (t.brief_view?.archive_label ? `${t.brief_view.archive_label} | GhostNote Pro` : "Strategic Intelligence Brief | GhostNote Pro")}</title>
                 <meta name="description" content={scribeSnippet.substring(0, 160)} />
 
                 {/* Open Graph / Facebook */}
@@ -78,7 +82,7 @@ const StrategicBriefView = () => {
                 {/* Twitter */}
                 <meta name="twitter:card" content="summary_large_image" />
                 <meta name="twitter:url" content={`https://ghostnotepro.com/archive/${id}`} />
-                <meta name="twitter:title" content={content.core_thesis || "Strategic Intelligence Brief"} />
+                <meta name="twitter:title" content={content.core_thesis || (t.brief_view?.archive_label || "Strategic Intelligence Brief")} />
                 <meta name="twitter:description" content={scribeSnippet.substring(0, 150)} />
                 <meta name="twitter:image" content="https://ghostnotepro.com/og-image.png" />
             </Helmet>
@@ -94,17 +98,17 @@ const StrategicBriefView = () => {
                     </div>
 
                     <h1 className="font-playfair font-bold text-4xl md:text-6xl leading-tight mb-8 text-black">
-                        {content.core_thesis || "Strategic Intelligence Brief"}
+                        {content.core_thesis || (t.brief_view?.archive_label || "Strategic Intelligence Brief")}
                     </h1>
 
                     {/* Emphasis Audit Metadata */}
                     <div className="flex flex-col md:flex-row md:items-center justify-between font-mono text-xs text-gray-600 bg-gray-50 p-4 border-t border-b border-gray-200">
                         <div className="space-x-6">
-                            <span>{t.brief_view?.duration || "DURATION"}: <span className="text-black">{audit.duration || "Unknown"}</span></span>
-                            <span>{t.brief_view?.intensity || "INTENSITY"}: <span className={`font-bold ${audit.intensity === 'High' ? 'text-red-700' : 'text-black'}`}>{audit.intensity || "Medium"}</span></span>
+                            <span>{t.brief_view?.duration || "DURATION"}: <span className="text-black">{audit.duration || "..."}</span></span>
+                            <span>{t.brief_view?.intensity || "INTENSITY"}: <span className={`font-bold ${audit.intensity === 'High' ? 'text-red-700' : 'text-black'}`}>{audit.intensity || "..."}</span></span>
                         </div>
                         <div className="mt-2 md:mt-0 font-serif italic text-gray-800">
-                            {t.brief_view?.state || "State"}: {audit.executive_state || "Reflective"}
+                            {t.brief_view?.state || "State"}: {audit.executive_state || "..."}
                         </div>
                     </div>
                 </header>
@@ -118,7 +122,7 @@ const StrategicBriefView = () => {
                             <section>
                                 <h3 className="font-sans font-bold text-[10px] uppercase tracking-[0.3em] text-gray-400 mb-6">{t.strategist?.judgment || "Executive Judgment"}</h3>
                                 <div className="font-playfair font-medium text-2xl md:text-3xl leading-relaxed text-black italic">
-                                    {renderMarkdownBlock(content.executive_judgement || content.judgment)}
+                                    {renderMarkdownBlock(strategistJudgment)}
                                 </div>
                             </section>
 
@@ -127,16 +131,16 @@ const StrategicBriefView = () => {
                             <section>
                                 <h3 className="font-sans font-bold text-[10px] uppercase tracking-[0.3em] text-red-800/60 mb-6">{t.strategist?.risk_audit || "Risk Audit"}</h3>
                                 <div className="bg-red-50/50 p-8 md:p-12 border-l-4 border-red-800 text-red-900 text-lg md:text-xl font-medium leading-relaxed italic">
-                                    {renderMarkdownBlock(content.risk_audit || content.riskAudit)}
+                                    {renderMarkdownBlock(strategistRisk)}
                                 </div>
                             </section>
 
                             <section>
                                 <h3 className="font-sans font-bold text-[10px] uppercase tracking-[0.3em] text-gray-400 mb-6">{t.strategist?.email_draft || "Drafted Communication"}</h3>
                                 <div className="font-mono text-sm md:text-base bg-gray-50 p-8 md:p-12 border border-gray-100 text-gray-700 whitespace-pre-wrap leading-relaxed">
-                                    {typeof (content.email_draft || content.emailDraft) === 'string'
-                                        ? (content.email_draft || content.emailDraft)
-                                        : ((content.email_draft || content.emailDraft)?.body || "Top Secret")}
+                                    {typeof (emailDraft) === 'string'
+                                        ? (emailDraft)
+                                        : (emailDraft?.body || "...")}
                                 </div>
                             </section>
                         </>

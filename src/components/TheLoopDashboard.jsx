@@ -69,7 +69,7 @@ const TheLoopDashboard = ({ onClose, languageName, t }) => {
             setAuditResult(result);
             await loadHistory();
         } catch (err) {
-            alert("Audit failed. Try again.");
+            alert(localT.messages?.audit_fail || "Audit failed. Try again.");
         } finally {
             setLoading(false);
         }
@@ -170,11 +170,11 @@ const TheLoopDashboard = ({ onClose, languageName, t }) => {
                                             }
                                             const url = `${window.location.origin}/archive/${shareId}`;
                                             navigator.clipboard.writeText(url);
-                                            alert("Prediction link copied to clipboard.");
+                                            alert(localT.messages?.history_share_link || "Prediction link copied to clipboard.");
                                         }}
                                         className="border border-white/20 text-white text-[10px] font-bold px-4 py-2 rounded-sm uppercase tracking-widest hover:bg-white/10"
                                     >
-                                        Share
+                                        {localT.history_view?.share || "Share"}
                                     </button>
                                 </div>
 
@@ -249,7 +249,7 @@ const TheLoopDashboard = ({ onClose, languageName, t }) => {
                                                     {isRecording ? <div className="w-6 h-6 bg-white rounded-sm"></div> : <span className="text-2xl">🎙️</span>}
                                                 </button>
                                                 <p className="text-xs tracking-widest uppercase text-gray-500">
-                                                    {isRecording ? `Recording... ${recordingTime}s` : (localT.history_view?.record_update || 'Tap to start update')}
+                                                    {isRecording ? `${localT.labels?.recording || 'Recording...'} ${recordingTime}s` : (localT.history_view?.record_update || 'Tap to start update')}
                                                 </p>
                                             </div>
                                         ) : (

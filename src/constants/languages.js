@@ -53,6 +53,7 @@ export const TRANSLATIONS = {
             select_file: "Select audio file",
             edit: "Edit Transcription",
             save_generate: "Save & Generate",
+            back_to_home: "Back to Home"
         },
         scribe: {
             title: "THE SCRIBE",
@@ -70,7 +71,12 @@ export const TRANSLATIONS = {
             email_draft: "EMAIL DRAFT",
             unlock_title: "Unlock The Strategist",
             unlock_desc: "Get the full Chief of Staff suite: Executive Judgment, Risk Audits, and ready-to-send Emails.",
-            operationalize: "OPERATIONALIZE THIS STRATEGY"
+            operationalize: "OPERATIONALIZE THIS STRATEGY",
+            specializing_in: "Specializing in",
+            record_longer_emphasis: "Record longer for deeper emphasis analysis.",
+            no_judgment: "No judgment available",
+            no_risk_audit: "No risk audit available",
+            email_draft_desc: "Review the persuasively drafted communication for your stakeholders."
         },
         status: {
             reflective: "REFLECTIVE",
@@ -98,10 +104,17 @@ export const TRANSLATIONS = {
             tap_finish: "Tap to Finish",
             free_limit: "Free transmutations complete. Upgrade to Pro",
             powered_by: "Powered by GhostNote Pro",
+            transmutation_fail: "Transmutation failed. Please try again.",
             generated_on: "Generated on",
             create_own: "Create Your Own Strategic Brief",
             archive_success: "Strategic brief archived. Link copied.",
-            archive_fail: "Failed to archive."
+            archive_fail: "Failed to archive.",
+            delete_confirm: "Delete this draft permanently?",
+            copy_share_link: "Public share link copied to clipboard.",
+            history_share_link: "Prediction link copied to clipboard.",
+            audit_fail: "Audit failed. Try again.",
+            publish_fail: "Failed to publish.",
+            social_opening: "GhostNote Pro is opening {platform}."
         },
         legal: {
             privacy: "Privacy",
@@ -110,7 +123,10 @@ export const TRANSLATIONS = {
         },
         modes: {
             record_desc: "Capture your strategic thoughts via voice recording.",
-            upload_desc: "Upload an existing audio file for analysis."
+            upload_desc: "Upload an existing audio file for analysis.",
+            drop_file: "Drop your audio file here",
+            drag_drop_upload: "Drag & drop or click to upload",
+            file_formats_limit: "MP3, WAV, M4A, WebM, OGG • Max 25MB"
         },
         labels: {
             duration: "Duration",
@@ -122,7 +138,18 @@ export const TRANSLATIONS = {
             exec_status: "Executive Status",
             pro: "Pro",
             standard: "Standard",
-            new_session: "New Session"
+            new_session: "New Session",
+            untitled_note: "Untitled Voice Note",
+            brain_dump: "💭 Brain Dump",
+            status_complete: "COMPLETE",
+            status_transcribed: "TRANSCRIBED",
+            share_public: "Share Public Link",
+            high_emphasis_signals: "High-Emphasis Signals",
+            share_linkedin: "Share to LinkedIn",
+            share_x: "Share to X",
+            share_whatsapp: "Share to WhatsApp",
+            copy_text: "Copy Text",
+            publish_web: "Publish to Web"
         },
         wager: {
             lock_title: "Judgment Lock",
@@ -159,7 +186,8 @@ export const TRANSLATIONS = {
             running: "Running Variance Engine...",
             discard: "Discard and Re-record",
             return: "Return to History",
-            accuracy_score: "Judgment Accuracy Score"
+            accuracy_score: "Judgment Accuracy Score",
+            share: "Share"
         },
         brief_view: {
             retrieving: "Retrieving from Vault...",
@@ -194,7 +222,16 @@ export const TRANSLATIONS = {
             payment_error: "Payment system is temporarily unavailable. Please try again.",
             verification_failed: "Verification Failed",
             network_error: "Verification failed due to network error.",
-            gateway_error: "Could not open payment gateway. Please refresh."
+            gateway_error: "Could not open payment gateway. Please refresh.",
+            limit_reached: "You've reached your free tier limit",
+            limit_desc: "You've used all 3 free transmutations. Your strategic thinking deserves unlimited processing.",
+            pro_features: "With GhostNote Pro, you get:",
+            feature_unlimited: "Unlimited Scribe transmutations",
+            feature_intelligence: "Strategist Intelligence (Judgment, Risk Audits)",
+            feature_priority: "Priority processing",
+            feature_storage: "Extended archive storage",
+            view_plans: "View plans",
+            support_contact: "Questions? Contact support"
         }
     },
     FR: {
@@ -224,7 +261,10 @@ export const TRANSLATIONS = {
             regenerate: "RÉGÉNÉRER",
             gift: "OFFRIR GHOSTNOTE PRO",
             upgrade: "PASSER À PRO",
-            select_file: "Sélectionner un fichier",
+            select_file: "Choisir un fichier audio",
+            edit: "Modifier la transcription",
+            save_generate: "Enregistrer et générer",
+            back_to_home: "Retour à l'accueil"
         },
         scribe: {
             title: "LE SCRIBE",
@@ -241,8 +281,13 @@ export const TRANSLATIONS = {
             risk_audit: "AUDIT DE RISQUE",
             email_draft: "PROJET D'EMAIL",
             unlock_title: "Débloquer Le Stratège",
-            unlock_desc: "Obtenez la suite complète du Chef de Cabinet : Jugement Exécutif, Audits de Risques et Emails prêts à l'envoi.",
-            operationalize: "OPÉRATIONNALISER CETTE STRATÉGIE"
+            unlock_desc: "Obtenez la suite complète de chef de cabinet : jugement exécutif, audits des risques et e-mails prêts à l'envoi.",
+            operationalize: "OPÉRATIONNALISER CETTE STRATÉGIE",
+            specializing_in: "Spécialisé en",
+            record_longer_emphasis: "Enregistrez plus longtemps pour une analyse plus approfondie.",
+            no_judgment: "Aucun jugement disponible",
+            no_risk_audit: "Aucun audit de risque disponible",
+            email_draft_desc: "Examinez la communication rédigée de manière persuasive pour vos parties prenantes."
         },
         status: {
             reflective: "RÉFLEXIF",
@@ -270,10 +315,17 @@ export const TRANSLATIONS = {
             tap_finish: "Appuyez pour terminer",
             free_limit: "Transmutations gratuites terminées. Passez à Pro",
             powered_by: "Propulsé par GhostNote Pro",
+            transmutation_fail: "Échec de la transmutation. Veuillez réessayer.",
             generated_on: "Généré le",
             create_own: "Créez votre propre brief stratégique",
             archive_success: "Brief stratégique archivé. Lien copié.",
-            archive_fail: "Échec de l'archivage."
+            archive_fail: "Échec de l'archivage.",
+            delete_confirm: "Supprimer ce brouillon définitivement ?",
+            copy_share_link: "Lien de partage public copié.",
+            history_share_link: "Lien de prédiction copié.",
+            audit_fail: "Échec de l'audit. Réessayez.",
+            publish_fail: "Échec de la publication.",
+            social_opening: "GhostNote Pro ouvre {platform}."
         },
         legal: {
             privacy: "Confidentialité",
@@ -281,8 +333,11 @@ export const TRANSLATIONS = {
             refund: "Politique de remboursement"
         },
         modes: {
-            record_desc: "Capturez vos pensées stratégiques via l'enregistrement vocal.",
-            upload_desc: "Téléchargez un fichier audio existant pour analyse."
+            record_desc: "Capturez vos pensées stratégiques via un enregistrement vocal.",
+            upload_desc: "Téléchargez un fichier audio existant pour analyse.",
+            drop_file: "Déposez votre fichier audio ici",
+            drag_drop_upload: "Glisser-déposer ou cliquer pour télécharger",
+            file_formats_limit: "MP3, WAV, M4A, WebM, OGG • Max 25 Mo"
         },
         labels: {
             duration: "Durée",
@@ -294,7 +349,18 @@ export const TRANSLATIONS = {
             exec_status: "Statut Exécutif",
             pro: "Pro",
             standard: "Standard",
-            new_session: "Nouvelle Session"
+            new_session: "Nouvelle Session",
+            untitled_note: "Note vocale sans titre",
+            brain_dump: "💭 Vide-cerveau",
+            status_complete: "TERMINÉ",
+            status_transcribed: "TRANSCRIT",
+            share_public: "Partager le lien public",
+            high_emphasis_signals: "Signaux de forte emphase",
+            share_linkedin: "Partager sur LinkedIn",
+            share_x: "Partager sur X",
+            share_whatsapp: "Partager sur WhatsApp",
+            copy_text: "Copier le texte",
+            publish_web: "Publier sur le Web"
         },
         wager: {
             lock_title: "Verrouillage du Jugement",
@@ -331,7 +397,8 @@ export const TRANSLATIONS = {
             running: "Exécution du Moteur de Variance...",
             discard: "Jeter et Réenregistrer",
             return: "Retour à l'Historique",
-            accuracy_score: "Score de Précision du Jugement"
+            accuracy_score: "Score de Précision du Jugement",
+            share: "Partager"
         },
         brief_view: {
             retrieving: "Récupération du Coffre...",
@@ -358,15 +425,24 @@ export const TRANSLATIONS = {
         },
         paywall: {
             headline: "Continuez à transformer la pensée en stratégie",
-            subtext: "Pro supprime les limites quotidiennes et débloque la transmutation de niveau exécutif, l'analyse de confiance et les sorties partageables.",
+            subtext: "Pro supprime les limites quotidiennes et débloque la transmutation de qualité exécutive, l'analyse de confiance et les sorties partageables.",
             cancel: "Annulez à tout moment. Pas de frais cachés.",
             restore: "Restaurer l'achat",
-            button_usd: "Continuer l'adhésion — 20 $/mois",
-            button_ngn: "Continuer l'adhésion — 30 000 ₦/mois",
+            button_usd: "Continuer avec l'adhésion — 20 $/mois",
+            button_ngn: "Continuer avec l'adhésion — 30 000 ₦/mois",
             payment_error: "Le système de paiement est temporairement indisponible. Veuillez réessayer.",
             verification_failed: "Échec de la vérification",
             network_error: "La vérification a échoué en raison d'une erreur réseau.",
-            gateway_error: "Impossible d'ouvrir la passerelle de paiement. Veuillez actualiser."
+            gateway_error: "Impossible d'ouvrir la passerelle de paiement. Veuillez actualiser.",
+            limit_reached: "Vous avez atteint votre limite de niveau gratuit",
+            limit_desc: "Vous avez utilisé les 3 transmutations gratuites. Votre réflexion stratégique mérite un traitement illimité.",
+            pro_features: "Avec GhostNote Pro, vous obtenez :",
+            feature_unlimited: "Transmutations Scribe illimitées",
+            feature_intelligence: "Intelligence du stratège (jugement, audits des risques)",
+            feature_priority: "Traitement prioritaire",
+            feature_storage: "Stockage d'archives étendu",
+            view_plans: "Voir les forfaits",
+            support_contact: "Questions ? Contactez le support"
         }
     },
     ES: {
@@ -395,8 +471,9 @@ export const TRANSLATIONS = {
             email: "ENVIAR POR EMAIL",
             regenerate: "REGENERAR",
             gift: "REGALAR GHOSTNOTE PRO",
-            upgrade: "MEJORAR A PRO",
-            select_file: "Seleccionar archivo",
+            upgrade: "SUBIR A PRO",
+            select_file: "Seleccionar archivo de audio",
+            back_to_home: "Volver al inicio"
         },
         scribe: {
             title: "EL ESCRIBA",
@@ -414,7 +491,12 @@ export const TRANSLATIONS = {
             email_draft: "BORRADOR DE CORREO",
             unlock_title: "Desbloquear El Estratega",
             unlock_desc: "Obtenga la suite completa de Jefe de Gabinete: Juicio Ejecutivo, Auditorías de Riesgo y Correos listos para enviar.",
-            operationalize: "OPERACIONALIZAR ESTA ESTRATEGIA"
+            operationalize: "OPERACIONALIZAR ESTA ESTRATEGIA",
+            specializing_in: "Especializado en",
+            record_longer_emphasis: "Grabe más tiempo para un análisis de énfasis más profundo.",
+            no_judgment: "No hay juicio disponible",
+            no_risk_audit: "No hay auditoría de riesgos disponible",
+            email_draft_desc: "Revise la comunicación redactada persuasivamente para sus partes interesadas."
         },
         status: {
             reflective: "REFLEXIVO",
@@ -440,12 +522,19 @@ export const TRANSLATIONS = {
             ready: "Listo para convertir el ruido en señal.",
             tap_record: "Toca para grabar",
             tap_finish: "Toca para terminar",
-            free_limit: "Transmutaciones gratuitas completas. Mejore a Pro",
+            free_limit: "Transmutaciones gratuitas completadas. Sube a Pro",
             powered_by: "Impulsado por GhostNote Pro",
+            transmutation_fail: "Fallo en la transmutación. Por favor, inténtelo de nuevo.",
             generated_on: "Generado el",
             create_own: "Crea tu propio informe estratégico",
             archive_success: "Informe archivado. Enlace copiado.",
-            archive_fail: "Error al archivar."
+            archive_fail: "Error al archivar.",
+            delete_confirm: "¿Eliminar este borrador permanentemente?",
+            copy_share_link: "Enlace de intercambio público copiado.",
+            history_share_link: "Enlace de predicción copiado.",
+            audit_fail: "Fallo en la auditoría. Reintentar.",
+            publish_fail: "Error al publicar.",
+            social_opening: "GhostNote Pro está abriendo {platform}."
         },
         legal: {
             privacy: "Privacidad",
@@ -454,7 +543,10 @@ export const TRANSLATIONS = {
         },
         modes: {
             record_desc: "Capture sus pensamientos estratégicos mediante grabación de voz.",
-            upload_desc: "Sube un archivo de audio existente para su análisis."
+            upload_desc: "Sube un archivo de audio existente para su análisis.",
+            drop_file: "Suelte su archivo de audio aquí",
+            drag_drop_upload: "Arrastrar y soltar o hacer clic para subir",
+            file_formats_limit: "MP3, WAV, M4A, WebM, OGG • Máx 25MB"
         },
         labels: {
             duration: "Duración",
@@ -466,7 +558,18 @@ export const TRANSLATIONS = {
             exec_status: "Estado Ejecutivo",
             pro: "Pro",
             standard: "Estándar",
-            new_session: "Nueva Sesión"
+            new_session: "Nueva Sesión",
+            untitled_note: "Nota de voz sin título",
+            brain_dump: "💭 Descarga mental",
+            status_complete: "COMPLETO",
+            status_transcribed: "TRANSCRITO",
+            share_public: "Compartir enlace público",
+            high_emphasis_signals: "Señales de alto énfasis",
+            share_linkedin: "Compartir en LinkedIn",
+            share_x: "Compartir en X",
+            share_whatsapp: "Compartir en WhatsApp",
+            copy_text: "Copiar texto",
+            publish_web: "Publicar en la Web"
         },
         wager: {
             lock_title: "Bloqueo de Juicio",
@@ -503,7 +606,8 @@ export const TRANSLATIONS = {
             running: "Ejecutando Motor de Variación...",
             discard: "Descartar y Regrabar",
             return: "Volver al Historial",
-            accuracy_score: "Puntuación de Precisión de Juicio"
+            accuracy_score: "Puntuación de Precisión de Juicio",
+            share: "Compartir"
         },
         brief_view: {
             retrieving: "Recuperando de la Bóveda...",
@@ -534,11 +638,20 @@ export const TRANSLATIONS = {
             cancel: "Cancela en cualquier momento. Sin tarifas ocultas.",
             restore: "Restaurar compra",
             button_usd: "Continuar con la membresía — $20/mes",
-            button_ngn: "Continuar con la membresía — ₦30,000/mes",
+            button_ngn: "Continuar con la membresía — 30,000 ₦/mes",
             payment_error: "El sistema de pago no está disponible temporalmente. Inténtalo de nuevo.",
             verification_failed: "Verificación fallida",
             network_error: "La verificación falló debido a un error de red.",
-            gateway_error: "No se pudo abrir la pasarela de pago. Por favor actualice."
+            gateway_error: "No se pudo abrir la pasarela de pago. Por favor actualice.",
+            limit_reached: "Has alcanzado tu límite de nivel gratuito",
+            limit_desc: "Has usado las 3 transmutations gratuitas. Tu pensamiento estratégico merece un procesamiento ilimitado.",
+            pro_features: "Con GhostNote Pro, obtienes:",
+            feature_unlimited: "Transmutaciones Scribe ilimitadas",
+            feature_intelligence: "Inteligencia de estratega (juicio, auditorías de riesgo)",
+            feature_priority: "Procesamiento prioritario",
+            feature_storage: "Almacenamiento de archivos extendido",
+            view_plans: "Ver planes",
+            support_contact: "¿Preguntas? Contactar soporte"
         }
     },
     DE: {
@@ -568,7 +681,8 @@ export const TRANSLATIONS = {
             regenerate: "REGENERIEREN",
             gift: "GHOSTNOTE PRO VERSCHENKEN",
             upgrade: "AUF PRO UPGRADEN",
-            select_file: "Datei auswählen",
+            select_file: "Audiodatei auswählen",
+            back_to_home: "Zurück zur Startseite"
         },
         scribe: {
             title: "DER SCHREIBER",
@@ -585,8 +699,13 @@ export const TRANSLATIONS = {
             risk_audit: "RISIKOPRÜFUNG",
             email_draft: "E-MAIL-ENTWURF",
             unlock_title: "Den Strategen freischalten",
-            unlock_desc: "Holen Sie sich die komplette Stabschef-Suite: Exekutives Urteil, Risikoprüfungen und versandfertige E-Mails.",
-            operationalize: "DIESE STRATEGIE OPERATIONALISIEREN"
+            unlock_desc: "Holen Sie sich das komplette Chief of Staff-Paket: Executive Judgment, Risiko-Audits und versandfertige E-Mails.",
+            operationalize: "DIESE STRATEGIE UMSETZEN",
+            specializing_in: "Spezialisiert auf",
+            record_longer_emphasis: "Länger aufnehmen für eine tiefere Betonungsanalyse.",
+            no_judgment: "Keine Beurteilung verfügbar",
+            no_risk_audit: "Keine Risikoprüfung verfügbar",
+            email_draft_desc: "Überprüfen Sie die überzeugend formulierte Kommunikation für Ihre Stakeholder."
         },
         status: {
             reflective: "REFLEKTIEREND",
@@ -612,12 +731,19 @@ export const TRANSLATIONS = {
             ready: "Bereit, Rauschen in Signale zu verwandeln.",
             tap_record: "Zum Aufnehmen tippen",
             tap_finish: "Zum Beenden tippen",
-            free_limit: "Kostenlose Transmutationen aufgebraucht. Upgrade auf Pro",
-            powered_by: "Unterstützt von GhostNote Pro",
+            free_limit: "Kostenlose Transmutationen abgeschlossen. Auf Pro upgraden",
+            powered_by: "Unterstützt durch GhostNote Pro",
+            transmutation_fail: "Transmutation fehlgeschlagen. Bitte versuchen Sie es erneut.",
             generated_on: "Generiert am",
             create_own: "Erstellen Sie Ihren eigenen Strategiebrief",
             archive_success: "Brief archiviert. Link kopiert.",
-            archive_fail: "Archivierung fehlgeschlagen."
+            archive_fail: "Archivierung fehlgeschlagen.",
+            delete_confirm: "Diesen Entwurf dauerhaft löschen?",
+            copy_share_link: "Öffentlicher Freigabelink kopiert.",
+            history_share_link: "Vorhersagelink kopiert.",
+            audit_fail: "Audit fehlgeschlagen. Bitte erneut versuchen.",
+            publish_fail: "Veröffentlichung fehlgeschlagen.",
+            social_opening: "GhostNote Pro öffnet {platform}."
         },
         legal: {
             privacy: "Datenschutz",
@@ -625,8 +751,11 @@ export const TRANSLATIONS = {
             refund: "Rückerstattung"
         },
         modes: {
-            record_desc: "Erfassen Sie Ihre strategischen Gedanken per Sprachaufzeichnung.",
-            upload_desc: "Laden Sie eine vorhandene Audiodatei zur Analyse hoch."
+            record_desc: "Erfassen Sie Ihre strategischen Gedanken per Sprachaufnahme.",
+            upload_desc: "Laden Sie eine vorhandene Audiodatei zur Analyse hoch.",
+            drop_file: "Audiodatei hier ablegen",
+            drag_drop_upload: "Drag & Drop oder zum Hochladen klicken",
+            file_formats_limit: "MP3, WAV, M4A, WebM, OGG • Max. 25 MB"
         },
         labels: {
             duration: "Dauer",
@@ -638,7 +767,18 @@ export const TRANSLATIONS = {
             exec_status: "Führungsstatus",
             pro: "Pro",
             standard: "Standard",
-            new_session: "Neue Sitzung"
+            new_session: "Neue Sitzung",
+            untitled_note: "Unbenannte Sprachnotiz",
+            brain_dump: "💭 Brain Dump",
+            status_complete: "ABGESCHLOSSEN",
+            status_transcribed: "TRANSKRIBIERT",
+            share_public: "Öffentlichen Link teilen",
+            high_emphasis_signals: "Signale mit hoher Betonung",
+            share_linkedin: "Auf LinkedIn teilen",
+            share_x: "Auf X teilen",
+            share_whatsapp: "Auf WhatsApp teilen",
+            copy_text: "Text kopieren",
+            publish_web: "Im Web veröffentlichen"
         },
         wager: {
             lock_title: "Urteilsverriegelung",
@@ -675,7 +815,8 @@ export const TRANSLATIONS = {
             running: "Varianz-Engine läuft...",
             discard: "Verwerfen und neu aufnehmen",
             return: "Zurück zum Verlauf",
-            accuracy_score: "Urteilsgenauigkeits-Score"
+            accuracy_score: "Urteilsgenauigkeits-Score",
+            share: "Teilen"
         },
         brief_view: {
             retrieving: "Abruf aus dem Tresor...",
@@ -710,7 +851,16 @@ export const TRANSLATIONS = {
             payment_error: "Zahlungssystem vorübergehend nicht verfügbar. Bitte versuchen Sie es erneut.",
             verification_failed: "Verifizierung fehlgeschlagen",
             network_error: "Verifizierung aufgrund eines Netzwerkfehlers fehlgeschlagen.",
-            gateway_error: "Zahlungsgateway konnte nicht geöffnet werden. Bitte aktualisieren."
+            gateway_error: "Zahlungsgateway konnte nicht geöffnet werden. Bitte aktualisieren.",
+            limit_reached: "Sie haben Ihr Limit für die kostenlose Stufe erreicht",
+            limit_desc: "Sie haben alle 3 kostenlosen Transmutationen verbraucht. Ihr strategisches Denken verdient eine unbegrenzte Verarbeitung.",
+            pro_features: "Mit GhostNote Pro erhalten Sie:",
+            feature_unlimited: "Unbegrenzte Scribe-Transmutationen",
+            feature_intelligence: "Strategen-Intelligenz (Urteil, Risiko-Audits)",
+            feature_priority: "Priorisierte Bearbeitung",
+            feature_storage: "Erweiterter Archivspeicher",
+            view_plans: "Pläne anzeigen",
+            support_contact: "Fragen? Support kontaktieren"
         }
     },
     ZH: {
@@ -740,7 +890,8 @@ export const TRANSLATIONS = {
             regenerate: "重新生成",
             gift: "赠送 GHOSTNOTE PRO",
             upgrade: "升级到 PRO",
-            select_file: "选择文件",
+            select_file: "选择音频文件",
+            back_to_home: "返回首页"
         },
         scribe: {
             title: "书记员",
@@ -757,8 +908,13 @@ export const TRANSLATIONS = {
             risk_audit: "风险审计",
             email_draft: "邮件草稿",
             unlock_title: "解锁战略家",
-            unlock_desc: "获取完整的幕僚长套件：执行判断、风险审计和可发送的邮件。",
-            operationalize: "实施此战略"
+            unlock_desc: "获取完整的幕僚长套件：执行分析、风险审计和即插即用的电子邮件。",
+            operationalize: "实施此战略",
+            specializing_in: "专注于",
+            record_longer_emphasis: "记录更长时间以进行更深入的重点分析。",
+            no_judgment: "无可用的判断",
+            no_risk_audit: "无可用的风险审计",
+            email_draft_desc: "查看为您的利益相关者编写的具有说服力的文案。"
         },
         status: {
             reflective: "反思性",
@@ -784,12 +940,19 @@ export const TRANSLATIONS = {
             ready: "准备将噪音转化为信号。",
             tap_record: "点击录制",
             tap_finish: "点击完成",
-            free_limit: "免费转化已用完。升级到 Pro",
+            free_limit: "免费转换完成。升级到 Pro",
             powered_by: "由 GhostNote Pro 提供支持",
+            transmutation_fail: "转换失败。请重试。",
             generated_on: "生成于",
             create_own: "创建您自己的战略简报",
             archive_success: "简报已存档。链接已复制。",
-            archive_fail: "存档失败。"
+            archive_fail: "归档失败。",
+            delete_confirm: "确定永久删除此草稿吗？",
+            copy_share_link: "公开分享链接已复制。",
+            history_share_link: "预测链接已复制。",
+            audit_fail: "审计失败。请重试。",
+            publish_fail: "发布失败。",
+            social_opening: "GhostNote Pro 正在打开 {platform}。"
         },
         legal: {
             privacy: "隐私",
@@ -797,8 +960,11 @@ export const TRANSLATIONS = {
             refund: "退款政策"
         },
         modes: {
-            record_desc: "通过录音捕捉您的战略构想。",
-            upload_desc: "上传现有的音频文件进行分析。"
+            record_desc: "通过语音录制捕捉您的战略构想。",
+            upload_desc: "上传现有的音频文件进行分析。",
+            drop_file: "将音频文件拖放到此处",
+            drag_drop_upload: "拖放或点击上传",
+            file_formats_limit: "MP3, WAV, M4A, WebM, OGG • 最大 25MB"
         },
         labels: {
             duration: "持续时间",
@@ -810,7 +976,18 @@ export const TRANSLATIONS = {
             exec_status: "执行状态",
             pro: "Pro",
             standard: "标准",
-            new_session: "新会话"
+            new_session: "新会话",
+            untitled_note: "未命名语音笔记",
+            brain_dump: "💭 想法倾倒",
+            status_complete: "已完成",
+            status_transcribed: "已转录",
+            share_public: "分享公开链接",
+            high_emphasis_signals: "高强调信号",
+            share_linkedin: "分享到 LinkedIn",
+            share_x: "分享到 X",
+            share_whatsapp: "分享到 WhatsApp",
+            copy_text: "复制文本",
+            publish_web: "发布到 Web"
         },
         wager: {
             lock_title: "判断锁定",
@@ -847,7 +1024,8 @@ export const TRANSLATIONS = {
             running: "正在运行差异引擎...",
             discard: "丢弃并重新录制",
             return: "返回历史",
-            accuracy_score: "判断准确率得分"
+            accuracy_score: "判断准确率得分",
+            share: "分享"
         },
         brief_view: {
             retrieving: "正在从保险库检索...",
@@ -874,15 +1052,24 @@ export const TRANSLATIONS = {
         },
         paywall: {
             headline: "继续将思想转化为战略",
-            subtext: "Pro 取消每日限制并解锁高管级转化、置信度分析和可共享的输出。",
+            subtext: "Pro 版取消了每日限制，并解锁了执行级嬗变、置信度分析和可共享输出。",
             cancel: "随时取消。无隐藏费用。",
             restore: "恢复购买",
-            button_usd: "继续会员资格 — $20/月",
-            button_ngn: "继续会员资格 — ₦30,000/月",
+            button_usd: "继续会员资格 — 20 美元/月",
+            button_ngn: "继续会员资格 — 30,000 奈拉/月",
             payment_error: "支付系统暂时不可用。请重试。",
             verification_failed: "验证失败",
             network_error: "由于网络错误，验证失败。",
-            gateway_error: "无法打开支付网关。请刷新。"
+            gateway_error: "无法打开支付网关。请刷新。",
+            limit_reached: "您已达到免费层限制",
+            limit_desc: "您已使用全部 3 次免费嬗变。您的战略思考值得无限处理。",
+            pro_features: "通过 GhostNote Pro，您可以获得：",
+            feature_unlimited: "无限次 Scribe 嬗变",
+            feature_intelligence: "战略家情报（判断、风险审计）",
+            feature_priority: "优先处理",
+            feature_storage: "扩展的档案存储",
+            view_plans: "查看计划",
+            support_contact: "有问题？联系支持"
         }
     },
     RU: {
@@ -911,8 +1098,9 @@ export const TRANSLATIONS = {
             email: "ОТПРАВИТЬ EMAIL",
             regenerate: "СГЕНЕРИРОВАТЬ СНОВА",
             gift: "ПОДАРИТЬ GHOSTNOTE PRO",
-            upgrade: "ОБНОВИТЬ ДО PRO",
-            select_file: "Выбрать файл",
+            upgrade: "ПЕРЕЙТИ НА PRO",
+            select_file: "Выбрать аудиофайл",
+            back_to_home: "Вернуться на главную"
         },
         scribe: {
             title: "ПИСАРЬ",
@@ -929,8 +1117,13 @@ export const TRANSLATIONS = {
             risk_audit: "АУДИТ РИСКОВ",
             email_draft: "ЧЕРНОВИК ПИСЬМА",
             unlock_title: "Разблокировать Стратега",
-            unlock_desc: "Получите полный набор Начальника штаба: Исполнительное суждение, Аудит рисков и готовые к отправке письма.",
-            operationalize: "ВНЕДРИТЬ ЭТУ СТРАТЕГИЮ"
+            unlock_desc: "Получите полный пакет инструментов руководителя аппарата: управленческие решения, аудит рисков и готовые к отправке электронные письма.",
+            operationalize: "РЕАЛИЗОВАТЬ ЭТУ СТРАТЕГИЮ",
+            specializing_in: "Специализируется на",
+            record_longer_emphasis: "Записывайте дольше для более глубокого анализа акцентов.",
+            no_judgment: "Суждение недоступно",
+            no_risk_audit: "Аудит рисков недоступен",
+            email_draft_desc: "Ознакомьтесь с убедительно составленным сообщением для ваших стейкхолдеров."
         },
         status: {
             reflective: "РЕФЛЕКСИВНЫЙ",
@@ -956,12 +1149,19 @@ export const TRANSLATIONS = {
             ready: "Готов превратить шум в сигнал.",
             tap_record: "Нажмите для записи",
             tap_finish: "Нажмите для завершения",
-            free_limit: "Бесплатные трансмутации исчерпаны. Обновитесь до Pro",
+            free_limit: "Бесплатные превращения завершены. Перейдите на Pro",
             powered_by: "При поддержке GhostNote Pro",
+            transmutation_fail: "Преобразование не удалось. Пожалуйста, попробуйте еще раз.",
             generated_on: "Сгенерировано",
             create_own: "Создайте свой стратегический бриф",
             archive_success: "Бриф архивирован. Ссылка скопирована.",
-            archive_fail: "Ошибка архивации."
+            archive_fail: "Ошибка архивации.",
+            delete_confirm: "Удалить этот черновик навсегда?",
+            copy_share_link: "Ссылка для публикации скопирована.",
+            history_share_link: "Ссылка на прогноз скопирована.",
+            audit_fail: "Ошибка аудита. Попробуйте еще раз.",
+            publish_fail: "Ошибка публикации.",
+            social_opening: "GhostNote Pro открывает {platform}."
         },
         legal: {
             privacy: "Конфиденциальность",
@@ -969,8 +1169,11 @@ export const TRANSLATIONS = {
             refund: "Возврат средств"
         },
         modes: {
-            record_desc: "Запишите свои стратегические мысли через голосовую запись.",
-            upload_desc: "Загрузите существующий аудиофайл для анализа."
+            record_desc: "Записывайте свои стратегические мысли с помощью голоса.",
+            upload_desc: "Загрузите существующий аудиофайл для анализа.",
+            drop_file: "Перетащите аудиофайл сюда",
+            drag_drop_upload: "Перетащите или нажмите для загрузки",
+            file_formats_limit: "MP3, WAV, M4A, WebM, OGG • Макс 25 МБ"
         },
         labels: {
             duration: "Длительность",
@@ -982,7 +1185,18 @@ export const TRANSLATIONS = {
             exec_status: "Статус",
             pro: "Pro",
             standard: "Стандарт",
-            new_session: "Новая сессия"
+            new_session: "Новая сессия",
+            untitled_note: "Голосовая заметка без названия",
+            brain_dump: "💭 Поток мыслей",
+            status_complete: "ЗАВЕРШЕНО",
+            status_transcribed: "ТРАНСКРИБИРОВАНО",
+            share_public: "Поделиться публичной ссылкой",
+            high_emphasis_signals: "Сигналы высокого акцента",
+            share_linkedin: "Поделиться в LinkedIn",
+            share_x: "Поделиться в X",
+            share_whatsapp: "Поделиться в WhatsApp",
+            copy_text: "Копировать текст",
+            publish_web: "Опубликовать в Интернете"
         },
         wager: {
             lock_title: "Блокировка Суждения",
@@ -1019,7 +1233,8 @@ export const TRANSLATIONS = {
             running: "Запуск двигателя вариации...",
             discard: "Сбросить и перезаписать",
             return: "Вернуться в Историю",
-            accuracy_score: "Оценка Точности Суждения"
+            accuracy_score: "Оценка Точности Суждения",
+            share: "Поделиться"
         },
         brief_view: {
             retrieving: "Извлечение из Хранилища...",
@@ -1050,11 +1265,20 @@ export const TRANSLATIONS = {
             cancel: "Отмена в любое время. Никаких скрытых платежей.",
             restore: "Восстановить покупку",
             button_usd: "Продлить подписку — $20/мес",
-            button_ngn: "Продлить подписку — ₦30,000/мес",
+            button_ngn: "Продлить подписку — 30.000 ₦/мес",
             payment_error: "Платежная система временно недоступна. Пожалуйста, попробуйте еще раз.",
             verification_failed: "Ошибка проверки",
             network_error: "Проверка не удалась из-за ошибки сети.",
-            gateway_error: "Не удалось открыть платежный шлюз. Пожалуйста, обновите страницу."
+            gateway_error: "Не удалось открыть платежный шлюз. Пожалуйста, обновите страницу.",
+            limit_reached: "Вы достигли лимита бесплатного уровня",
+            limit_desc: "Вы использовали все 3 бесплатные трансмутации. Ваше стратегическое мышление заслуживает неограниченной обработки.",
+            pro_features: "С GhostNote Pro вы получаете:",
+            feature_unlimited: "Неограниченное количество трансмутаций Scribe",
+            feature_intelligence: "Интеллект стратега (суждение, аудит рисков)",
+            feature_priority: "Приоритетная обработка",
+            feature_storage: "Расширенное хранилище архива",
+            view_plans: "Просмотреть планы",
+            support_contact: "Вопросы? Свяжитесь с поддержкой"
         }
     },
     JA: {
@@ -1084,7 +1308,8 @@ export const TRANSLATIONS = {
             regenerate: "再生成",
             gift: "GHOSTNOTE PROを贈る",
             upgrade: "PROにアップグレード",
-            select_file: "ファイルを選択",
+            select_file: "オーディオファイルを選択",
+            back_to_home: "ホームに戻る"
         },
         scribe: {
             title: "書記官",
@@ -1101,8 +1326,13 @@ export const TRANSLATIONS = {
             risk_audit: "リスク監査",
             email_draft: "メール下書き",
             unlock_title: "戦略家を解除",
-            unlock_desc: "完全な参謀長スイートを取得：経営判断、リスク監査、送信可能なメール。",
-            operationalize: "この戦略を実行に移す"
+            unlock_desc: "エグゼクティブ・ジャッジメント、リスク監査、すぐに送信できるメールなど、チーフ・オブ・スタッフの全機能をご利用いただけます。",
+            operationalize: "この戦略を実行する",
+            specializing_in: "専門：",
+            record_longer_emphasis: "より詳細な強調分析のために、長く録音してください。",
+            no_judgment: "判断は利用できません",
+            no_risk_audit: "リスク監査は利用できません",
+            email_draft_desc: "ステークホルダー向けに説得力を持って作成されたコミュニケーションを確認してください。"
         },
         status: {
             reflective: "内省的",
@@ -1128,12 +1358,19 @@ export const TRANSLATIONS = {
             ready: "ノイズをシグナルに変える準備ができました。",
             tap_record: "タップして録音",
             tap_finish: "タップして終了",
-            free_limit: "無料変換を使い切りました。Proにアップグレード",
+            free_limit: "無料の変換が完了しました。Proにアップグレードしてください",
             powered_by: "Powered by GhostNote Pro",
+            transmutation_fail: "変換に失敗しました。もう一度お試しください。",
             generated_on: "生成日",
             create_own: "独自の戦略概要を作成",
             archive_success: "概要をアーカイブしました。リンクをコピーしました。",
-            archive_fail: "アーカイブに失敗しました。"
+            archive_fail: "アーカイブに失敗しました。",
+            delete_confirm: "この下書きを永久に削除しますか？",
+            copy_share_link: "公開共有リンクをコピーしました。",
+            history_share_link: "予測リンクをコピーしました。",
+            audit_fail: "監査に失敗しました。もう一度お試しください。",
+            publish_fail: "公開に失敗しました。",
+            social_opening: "GhostNote Proが{platform}を開いています。"
         },
         legal: {
             privacy: "プライバシー",
@@ -1141,8 +1378,11 @@ export const TRANSLATIONS = {
             refund: "返金ポリシー"
         },
         modes: {
-            record_desc: "音声録音で戦略的な思考を記録します。",
-            upload_desc: "分析のために既存のオーディオファイルをアップロードします。"
+            record_desc: "音声録音で戦略的なアイデアをキャプチャします。",
+            upload_desc: "分析のために既存のオーディオファイルをアップロードします。",
+            drop_file: "ここにオーディオファイルをドロップ",
+            drag_drop_upload: "ドラッグ＆ドロップまたはクリックしてアップロード",
+            file_formats_limit: "MP3, WAV, M4A, WebM, OGG • 最大 25MB"
         },
         labels: {
             duration: "期間",
@@ -1154,7 +1394,18 @@ export const TRANSLATIONS = {
             exec_status: "経営ステータス",
             pro: "Pro",
             standard: "標準",
-            new_session: "新しいセッション"
+            new_session: "新しいセッション",
+            untitled_note: "無題のボイスノート",
+            brain_dump: "💭 ブレインダンプ",
+            status_complete: "完了",
+            status_transcribed: "文字起こし済み",
+            share_public: "公開リンクを共有",
+            high_emphasis_signals: "高い強調信号",
+            share_linkedin: "LinkedInで共有",
+            share_x: "Xで共有",
+            share_whatsapp: "WhatsAppで共有",
+            copy_text: "テキストをコピー",
+            publish_web: "Webに公開"
         },
         wager: {
             lock_title: "判断のロック",
@@ -1191,7 +1442,8 @@ export const TRANSLATIONS = {
             running: "分散エンジンを実行中...",
             discard: "破棄して再録音",
             return: "履歴に戻る",
-            accuracy_score: "判断精度スコア"
+            accuracy_score: "判断精度スコア",
+            share: "共有"
         },
         brief_view: {
             retrieving: "保管庫から取得中...",
@@ -1255,8 +1507,9 @@ export const TRANSLATIONS = {
             email: "ENVIAR POR EMAIL",
             regenerate: "REGENERAR",
             gift: "PRESENTEIE GHOSTNOTE PRO",
-            upgrade: "ATUALIZAR PARA PRO",
-            select_file: "Selecionar arquivo",
+            upgrade: "UPGRADE PARA PRO",
+            select_file: "Selecionar arquivo de áudio",
+            back_to_home: "Voltar para o Início"
         },
         scribe: {
             title: "O ESCRIVÃO",
@@ -1273,8 +1526,13 @@ export const TRANSLATIONS = {
             risk_audit: "AUDITORIA DE RISCO",
             email_draft: "RASCUNHO DE EMAIL",
             unlock_title: "Desbloquear O Estrategista",
-            unlock_desc: "Obtenha a suíte completa de Chefe de Gabinete: Julgamento Executivo, Auditorias de Risco e Emails prontos para envio.",
-            operationalize: "OPERACIONALIZAR ESTA ESTRATÉGIA"
+            unlock_desc: "Obtenha a suíte completa de Chefe de Gabinete: Julgamento Executivo, Auditorias de Risco e E-mails prontos para enviar.",
+            operationalize: "OPERACIONALIZAR ESTA ESTRATÉGIA",
+            specializing_in: "Especializado em",
+            record_longer_emphasis: "Grave por mais tempo para uma análise de ênfase mais profunda.",
+            no_judgment: "Nenhum julgamento disponível",
+            no_risk_audit: "Nenhuma auditoria de risco disponível",
+            email_draft_desc: "Revise a comunicação redigida de forma persuasiva para seus stakeholders."
         },
         status: {
             reflective: "REFLEXIVO",
@@ -1302,10 +1560,17 @@ export const TRANSLATIONS = {
             tap_finish: "Toque para Terminar",
             free_limit: "Transmutações gratuitas completas. Atualize para Pro",
             powered_by: "Desenvolvido por GhostNote Pro",
+            transmutation_fail: "Falha na transmutação. Por favor, tente novamente.",
             generated_on: "Gerado em",
             create_own: "Crie seu próprio resumo estratégico",
             archive_success: "Resumo arquivado. Link copiado.",
-            archive_fail: "Falha ao arquivar."
+            archive_fail: "Falha ao arquivar.",
+            delete_confirm: "Excluir este rascunho permanentemente?",
+            copy_share_link: "Link de compartilhamento público copiado.",
+            history_share_link: "Link de previsão copiado.",
+            audit_fail: "Falha na auditoria. Tente novamente.",
+            publish_fail: "Falha ao publicar.",
+            social_opening: "GhostNote Pro está abrindo {platform}."
         },
         legal: {
             privacy: "Privacidade",
@@ -1314,7 +1579,10 @@ export const TRANSLATIONS = {
         },
         modes: {
             record_desc: "Capture seus pensamentos estratégicos via gravação de voz.",
-            upload_desc: "Carregue um arquivo de áudio existente para análise."
+            upload_desc: "Envie um arquivo de áudio existente para análise.",
+            drop_file: "Solte seu arquivo de áudio aqui",
+            drag_drop_upload: "Arraste e solte ou clique para enviar",
+            file_formats_limit: "MP3, WAV, M4A, WebM, OGG • Máx 25 MB"
         },
         labels: {
             duration: "Duração",
@@ -1326,7 +1594,18 @@ export const TRANSLATIONS = {
             exec_status: "Status Executivo",
             pro: "Pro",
             standard: "Padrão",
-            new_session: "Nova Sessão"
+            new_session: "Nova Sessão",
+            untitled_note: "Nota de voz sem título",
+            brain_dump: "💭 Descarga cerebral",
+            status_complete: "COMPLETO",
+            status_transcribed: "TRANSCRITO",
+            share_public: "Compartilhar link público",
+            high_emphasis_signals: "Sinais de alta ênfase",
+            share_linkedin: "Compartilhar no LinkedIn",
+            share_x: "Compartilhar no X",
+            share_whatsapp: "Compartilhar no WhatsApp",
+            copy_text: "Copiar texto",
+            publish_web: "Publicar na Web"
         },
         wager: {
             lock_title: "Bloqueio de Julgamento",
@@ -1363,7 +1642,8 @@ export const TRANSLATIONS = {
             running: "Executando Motor de Variância...",
             discard: "Descartar e Regravar",
             return: "Voltar ao Histórico",
-            accuracy_score: "Pontuação de Precisão de Julgamento"
+            accuracy_score: "Pontuação de Precisão de Julgamento",
+            share: "Compartilhar"
         },
         brief_view: {
             retrieving: "Recuperando do Cofre...",
@@ -1398,7 +1678,16 @@ export const TRANSLATIONS = {
             payment_error: "O sistema de pagamento está temporariamente indisponível. Tente novamente.",
             verification_failed: "Falha na verificação",
             network_error: "Falha na verificação devido a erro de rede.",
-            gateway_error: "Não foi possível abrir o gateway de pagamento. Atualize."
+            gateway_error: "Não foi possível abrir o gateway de pagamento. Atualize.",
+            limit_reached: "Você atingiu seu limite do plano gratuito",
+            limit_desc: "Você usou todas as 3 transmutações gratuitas. Seu pensamento estratégico merece processamento ilimitado.",
+            pro_features: "Com GhostNote Pro, você recebe:",
+            feature_unlimited: "Transmutações Scribe ilimitadas",
+            feature_intelligence: "Inteligência de Estrategista (Julgamento, Auditorias de Risco)",
+            feature_priority: "Processamento prioritário",
+            feature_storage: "Armazenamento de arquivo estendido",
+            view_plans: "Ver planos",
+            support_contact: "Dúvidas? Entre em contato com o suporte"
         }
     },
     AR: {
@@ -1428,7 +1717,8 @@ export const TRANSLATIONS = {
             regenerate: "إعادة التوليد",
             gift: "إهداء GHOSTNOTE PRO",
             upgrade: "الترقية إلى PRO",
-            select_file: "اختر ملف",
+            select_file: "اختر ملف صوتي",
+            back_to_home: "العودة إلى الرئيسية"
         },
         scribe: {
             title: "الكاتب",
@@ -1446,7 +1736,12 @@ export const TRANSLATIONS = {
             email_draft: "مسودة البريد الإلكتروني",
             unlock_title: "فتح الاستراتيجي",
             unlock_desc: "احصل على حزمة رئيس الموظفين الكاملة: الحكم التنفيذي، تدقيق المخاطر، ورسائل بريد إلكتروني جاهزة للإرسال.",
-            operationalize: "تفعيل هذه الاستراتيجية"
+            operationalize: "تفعيل هذه الاستراتيجية",
+            specializing_in: "متخصص في",
+            record_longer_emphasis: "سجل لفترة أطول لتحليل أكثر عمقاً للتركيز.",
+            no_judgment: "لا يوجد حكم متاح",
+            no_risk_audit: "لا يوجد تدقيق مخاطر متاح",
+            email_draft_desc: "راجع الخطاب المصاغ بشكل مقنع لأصحاب المصلحة لديك."
         },
         status: {
             reflective: "تأملي",
@@ -1474,10 +1769,17 @@ export const TRANSLATIONS = {
             tap_finish: "انقر للإنهاء",
             free_limit: "اكتملت التحويلات المجانية. قم بالترقية إلى Pro",
             powered_by: "بدعم من GhostNote Pro",
+            transmutation_fail: "فشل التحويل. يرجى المحاولة مرة أخرى.",
             generated_on: "تم إنشاؤه في",
             create_own: "أنشئ ملخصك الاستراتيجي الخاص",
             archive_success: "تمت أرشفة الملخص. تم نسخ الرابط.",
-            archive_fail: "فشل الأرشفة."
+            archive_fail: "فشل الأرشفة.",
+            delete_confirm: "هل تريد حذف هذه المسودة نهائيًا؟",
+            copy_share_link: "تم نسخ رابط المشاركة العام.",
+            history_share_link: "تم نسخ رابط التوقعات.",
+            audit_fail: "فشلت المراجعة. حاول مرة أخرى.",
+            publish_fail: "فشل النشر.",
+            social_opening: "GhostNote Pro يفتح {platform}."
         },
         legal: {
             privacy: "الخصوصية",
@@ -1486,7 +1788,10 @@ export const TRANSLATIONS = {
         },
         modes: {
             record_desc: "سجل أفكارك الاستراتيجية عبر التسجيل الصوتي.",
-            upload_desc: "ارفع ملف صوتي موجود للتحليل."
+            upload_desc: "ارفع ملف صوتي موجود للتحليل.",
+            drop_file: "فلت ملف الصوت هنا",
+            drag_drop_upload: "سحب وإفلات أو انقر للرفع",
+            file_formats_limit: "MP3, WAV, M4A, WebM, OGG • بحد أقصى 25 ميجابايت"
         },
         labels: {
             duration: "المدة",
@@ -1498,7 +1803,18 @@ export const TRANSLATIONS = {
             exec_status: "الحالة التنفيذية",
             pro: "Pro",
             standard: "قياسي",
-            new_session: "جلسة جديدة"
+            new_session: "جلسة جديدة",
+            untitled_note: "ملاحظة صوتية بدون عنوان",
+            brain_dump: "💭 تفريغ الأفكار",
+            status_complete: "مكتمل",
+            status_transcribed: "تم نسخه",
+            share_public: "مشاركة الرابط العام",
+            high_emphasis_signals: "إشارات عالية التأكيد",
+            share_linkedin: "مشاركة على LinkedIn",
+            share_x: "مشاركة على X",
+            share_whatsapp: "مشاركة على WhatsApp",
+            copy_text: "نسخ النص",
+            publish_web: "النشر على الويب"
         },
         wager: {
             lock_title: "قفل الحكم",
@@ -1535,7 +1851,8 @@ export const TRANSLATIONS = {
             running: "تشغيل محرك التباين...",
             discard: "تجاهل وإعادة التسجيل",
             return: "العودة إلى السجل",
-            accuracy_score: "درجة دقة الحكم"
+            accuracy_score: "درجة دقة الحكم",
+            share: "مشاركة"
         },
         brief_view: {
             retrieving: "جاري الاسترداد من الخزنة...",
@@ -1570,7 +1887,16 @@ export const TRANSLATIONS = {
             payment_error: "نظام الدفع غير متاح مؤقتًا. يرجى المحاولة مرة أخرى.",
             verification_failed: "فشل التحقق",
             network_error: "فشل التحقق بسبب خطأ في الشبكة.",
-            gateway_error: "تعذر فتح بوابة الدفع. يرجى التحديث."
+            gateway_error: "تعذر فتح بوابة الدفع. يرجى التحديث.",
+            limit_reached: "لقد وصلت إلى الحد المسموح به للفئة المجانية",
+            limit_desc: "لقد استخدمت جميع التحويلات الـ 3 المجانية. تفكيرك الاستراتيجي يستحق معالجة غير محدودة.",
+            pro_features: "مع GhostNote Pro، ستحصل على:",
+            feature_unlimited: "تحويلات Scribe غير محدودة",
+            feature_intelligence: "ذكاء الاستراتيجي (الحكم، تدقيق المخاطر)",
+            feature_priority: "معالجة ذات أولوية",
+            feature_storage: "توسيع تخزين الأرشيف",
+            view_plans: "عرض الخطط",
+            support_contact: "أسئلة؟ اتصل بالدعم"
         }
     },
     HI: {
@@ -1600,7 +1926,8 @@ export const TRANSLATIONS = {
             regenerate: "पुनः उत्पन्न करें",
             gift: "GHOSTNOTE PRO उपहार दें",
             upgrade: "PRO में अपग्रेड करें",
-            select_file: "फ़ाइल चुनें",
+            select_file: "ऑडियो फ़ाइल चुनें",
+            back_to_home: "होम पर वापस जाएं"
         },
         scribe: {
             title: "लेखक",
@@ -1618,7 +1945,12 @@ export const TRANSLATIONS = {
             email_draft: "ईमेल ड्राफ्ट",
             unlock_title: "रणनीतिकार को अनलॉक करें",
             unlock_desc: "पूर्ण चीफ ऑफ स्टाफ सुइट प्राप्त करें: कार्यकारी निर्णय, जोखिम ऑडिट, और भेजने के लिए तैयार ईमेल।",
-            operationalize: "इस रणनीति को संचालित करें"
+            operationalize: "इस रणनीति को संचालित करें",
+            specializing_in: "विशेषज्ञता：",
+            record_longer_emphasis: "गहन जोर विश्लेषण के लिए लंबे समय तक रिकॉर्ड करें।",
+            no_judgment: "कोई निर्णय उपलब्ध नहीं",
+            no_risk_audit: "कोई जोखिम ऑडिट उपलब्ध नहीं",
+            email_draft_desc: "अपने हितधारकों के लिए प्रेरक रूप से तैयार किए गए संचार की समीक्षा करें।"
         },
         status: {
             reflective: "चिंतनशील",
@@ -1646,10 +1978,17 @@ export const TRANSLATIONS = {
             tap_finish: "समाप्त करने के लिए टैप करें",
             free_limit: "मुफ्त परिवर्तन पूर्ण। Pro में अपग्रेड करें",
             powered_by: "GhostNote Pro द्वारा संचालित",
+            transmutation_fail: "परिवर्तन विफल रहा। कृपया पुनः प्रयास करें।",
             generated_on: "पर उत्पन्न",
             create_own: "अपना रणनीतिक संक्षिप्त बनाएँ",
             archive_success: "संक्षिप्त संग्रहीत। लिंक कॉपी किया गया।",
-            archive_fail: "संग्रह करने में विफल।"
+            archive_fail: "संग्रह करने में विफल।",
+            delete_confirm: "क्या आप इस ड्राफ्ट को स्थायी रूप से हटाना चाहते हैं?",
+            copy_share_link: "सार्वजनिक साझा लिंक कॉपी किया गया।",
+            history_share_link: "भविष्यवाणी लिंक कॉपी किया गया।",
+            audit_fail: "ऑडिट विफल रहा। पुनः प्रयास करें।",
+            publish_fail: "प्रकाशित करने में विफल।",
+            social_opening: "GhostNote Pro {platform} खोल रहा है।"
         },
         legal: {
             privacy: "गोपनीयता",
@@ -1658,7 +1997,10 @@ export const TRANSLATIONS = {
         },
         modes: {
             record_desc: "वॉयस रिकॉर्डिंग के माध्यम से अपने रणनीतिक विचारों को कैप्चर करें।",
-            upload_desc: "विश्लेषण के लिए एक मौजूदा ऑडियो फ़ाइल अपलोड करें।"
+            upload_desc: "विश्लेषण के लिए एक मौजूदा ऑडियो फ़ाइल अपलोड करें।",
+            drop_file: "ऑडियो फ़ाइल यहाँ छोड़ें",
+            drag_drop_upload: "ड्रैग एंड ड्रॉप करें या अपलोड करने के लिए क्लिक करें",
+            file_formats_limit: "MP3, WAV, M4A, WebM, OGG • अधिकतम 25MB"
         },
         labels: {
             duration: "अवधि",
@@ -1670,7 +2012,18 @@ export const TRANSLATIONS = {
             exec_status: "स्थिति",
             pro: "Pro",
             standard: "मानक",
-            new_session: "नया सत्र"
+            new_session: "नया सत्र",
+            untitled_note: "अनाम वॉयस नोट",
+            brain_dump: "💭 ब्रेन डंप",
+            status_complete: "पूर्ण",
+            status_transcribed: "प्रतिलेखित",
+            share_public: "सार्वजनिक लिंक साझा करें",
+            high_emphasis_signals: "उच्च-जोर संकेत",
+            share_linkedin: "LinkedIn पर साझा करें",
+            share_x: "X पर साझा करें",
+            share_whatsapp: "WhatsApp पर साझा करें",
+            copy_text: "टेक्स्ट कॉपी करें",
+            publish_web: "वेब पर प्रकाशित करें"
         },
         wager: {
             lock_title: "निर्णय लॉक",
@@ -1707,7 +2060,8 @@ export const TRANSLATIONS = {
             running: "विचरण इंजन चल रहा है...",
             discard: "त्यागें और पुनः रिकॉर्ड करें",
             return: "इतिहास पर लौटें",
-            accuracy_score: "निर्णय सटीकता स्कोर"
+            accuracy_score: "निर्णय सटीकता स्कोर",
+            share: "साझा करें"
         },
         brief_view: {
             retrieving: "तिजोरी से पुनः प्राप्त किया जा रहा है...",
@@ -1734,7 +2088,7 @@ export const TRANSLATIONS = {
         },
         paywall: {
             headline: "विचार को रणनीति में बदलना जारी रखें",
-            subtext: "Pro दैनिक सीमाओं को हटाता है और कार्यकारी-ग्रेड परिवर्तन, विश्वास विश्लेषण और साझा करने योग्य आउटपुट को अनलॉक करता है।",
+            subtext: "Pro दैनिक सीमाओं को हटाता है और कार्यकारी-ग्रेड परिवर्तन, विश्वास विश्लेषण और साझा करने योग्य आउटपुट को अनलॉक करता.।",
             cancel: "कभी भी रद्द करें। कोई छिपी हुई फीस नहीं।",
             restore: "खरीद बहाल करें",
             button_usd: "सदस्यता जारी रखें — $20/माह",
@@ -1742,7 +2096,16 @@ export const TRANSLATIONS = {
             payment_error: "भुगतान प्रणाली अस्थायी रूप से अनुपलब्ध है। कृपया पुन: प्रयास करें।",
             verification_failed: "सत्यापन विफल",
             network_error: "नेटवर्क त्रुटि के कारण सत्यापन विफल रहा।",
-            gateway_error: "भुगतान गेटवे नहीं खुल सका। कृपया रिफ्रेश करें।"
+            gateway_error: "भुगतान गेटवे नहीं खुल सका। कृपया रिफ्रेश करें।",
+            limit_reached: "आप अपनी निःशुल्क सीमा तक पहुँच गए हैं",
+            limit_desc: "आपने सभी 3 निःशुल्क परिवर्तनों का उपयोग कर लिया है। आपका रणनीतिक चिंतन असीमित प्रसंस्करण का पात्र है।",
+            pro_features: "GhostNote Pro के साथ, आपको मिलता है:",
+            feature_unlimited: "असीमित Scribe परिवर्तन",
+            feature_intelligence: "रणनीतिकार इंटेलिजेंस (निर्णय, जोखिम ऑडिट)",
+            feature_priority: "प्राथमिकता प्रसंस्करण",
+            feature_storage: "विस्तारित संग्रह भंडारण",
+            view_plans: "योजनाएं देखें",
+            support_contact: "प्रश्न? सहायता से संपर्क करें"
         }
     }
 };

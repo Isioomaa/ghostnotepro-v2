@@ -39,7 +39,7 @@ const ShareActions = ({ sessionId, textToShare, analysisResult, isPro, onPaywall
         } catch (err) {
             console.error("Publish failed", err);
             if (onShowToast) {
-                onShowToast("Failed to publish.");
+                onShowToast(localT.messages?.publish_fail || "Failed to publish.");
             }
         } finally {
             setIsPublishing(false);
@@ -66,7 +66,8 @@ const ShareActions = ({ sessionId, textToShare, analysisResult, isPro, onPaywall
         // 2. Fallback to Copy + Open (Desktop/Legacy)
         const success = await handleCopy(content, false);
         if (success) {
-            alert((localT.messages?.copy_success || "Copied!") + "\n\nGhostNote Pro is opening LinkedIn.");
+            const openingMsg = (localT.messages?.social_opening || "GhostNote Pro is opening {platform}.").replace('{platform}', 'LinkedIn');
+            alert((localT.messages?.copy_success || "Copied!") + "\n\n" + openingMsg);
             window.open('https://www.linkedin.com/feed/?shareActive=true', '_blank');
         }
     };
@@ -77,7 +78,7 @@ const ShareActions = ({ sessionId, textToShare, analysisResult, isPro, onPaywall
                 <button
                     onClick={handleLinkedIn}
                     className="opacity-60 hover:opacity-100 text-[#999] hover:text-[#0077b5] transition-all"
-                    title="Share to LinkedIn"
+                    title={localT.labels?.share_linkedin || "Share to LinkedIn"}
                 >
                     <FaLinkedin size={20} />
                 </button>
@@ -88,7 +89,7 @@ const ShareActions = ({ sessionId, textToShare, analysisResult, isPro, onPaywall
                         window.open(shareUrl, '_blank');
                     }}
                     className="opacity-60 hover:opacity-100 text-[#999] hover:text-[#1DA1F2] transition-all"
-                    title="Share to X"
+                    title={localT.labels?.share_x || "Share to X"}
                 >
                     <FaXTwitter size={20} />
                 </button>
@@ -99,7 +100,7 @@ const ShareActions = ({ sessionId, textToShare, analysisResult, isPro, onPaywall
                         window.open(`https://wa.me/?text=${text}`, '_blank');
                     }}
                     className="opacity-60 hover:opacity-100 text-[#999] hover:text-[#25D366] transition-all"
-                    title="Share to WhatsApp"
+                    title={localT.labels?.share_whatsapp || "Share to WhatsApp"}
                 >
                     <FaWhatsapp size={20} />
                 </button>
@@ -107,7 +108,7 @@ const ShareActions = ({ sessionId, textToShare, analysisResult, isPro, onPaywall
                     onClick={() => handleCopy(textToShare)}
                     className={`flex items-center space-x-2 font-medium text-xs uppercase tracking-widest transition-colors ${copied ? 'text-green-500' : 'text-[#999] hover:text-[#A88E65]'
                         }`}
-                    title="Copy Text"
+                    title={localT.labels?.copy_text || "Copy Text"}
                 >
                     <FaRegCopy size={18} />
                     <span>{copied ? '✓' : localT.buttons.copy}</span>
@@ -125,7 +126,7 @@ const ShareActions = ({ sessionId, textToShare, analysisResult, isPro, onPaywall
             >
                 <FaGlobe className={`text-[#A88E65] ${isPublishing ? 'animate-spin' : 'group-hover:rotate-12 transition-transform'}`} />
                 <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#cccccc]">
-                    {isPublishing ? '...' : (localT.labels?.archive_share || "Publish to Web")}
+                    {isPublishing ? '...' : (localT.labels?.publish_web || "Publish to Web")}
                 </span>
             </button>
         </div>

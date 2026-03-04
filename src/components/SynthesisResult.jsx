@@ -207,7 +207,7 @@ const SynthesisResult = ({ text, analysis, languageName, currentLang, t, onReset
                             <p className="text-[#999] text-[10px] uppercase tracking-[0.3em]">{localT.scribe?.transcription || "TRANSCRIPTION"}</p>
                             {industry && (
                                 <span className="text-tactical-amber text-[9px] font-bold uppercase tracking-widest mt-1 px-2 py-0.5 bg-tactical-amber/10 border border-tactical-amber/30 rounded-full">
-                                    Specializing in {industry}
+                                    {localT.strategist.specializing_in} {industry}
                                 </span>
                             )}
                         </div>
@@ -288,14 +288,14 @@ const SynthesisResult = ({ text, analysis, languageName, currentLang, t, onReset
                         {(!analysis.emphasis_signals || analysis.emphasis_signals.length === 0) && (
                             <div className="mt-6 text-center">
                                 <p className="text-[10px] text-gray-500 italic tracking-wide">
-                                    Record longer for deeper emphasis analysis.
+                                    {localT.strategist.record_longer_emphasis}
                                 </p>
                             </div>
                         )}
 
                         {analysis.emphasis_signals && analysis.emphasis_signals.length > 0 && (
                             <div className="mt-6 pt-6 border-t border-white/5">
-                                <p className="text-[10px] uppercase tracking-widest text-gray-500 mb-3 text-center">High-Emphasis Signals</p>
+                                <p className="text-[10px] uppercase tracking-widest text-gray-500 mb-3 text-center">{localT.labels?.high_emphasis_signals || "High-Emphasis Signals"}</p>
                                 <div className="flex flex-wrap justify-center gap-2">
                                     {analysis.emphasis_signals.map((signal, idx) => (
                                         <span key={idx} className="px-3 py-1 bg-white/5 border border-white/10 rounded-full text-[10px] text-white font-medium uppercase tracking-wider">
@@ -491,7 +491,9 @@ const SynthesisResult = ({ text, analysis, languageName, currentLang, t, onReset
                                             <span className="font-sans font-bold text-white text-[10px] uppercase tracking-widest">{localT.strategist?.email_draft || "EMAIL DRAFT"}</span>
                                             <span className="text-xs opacity-40 group-hover:opacity-100 transition-opacity">{showEmail ? '−' : '+'}</span>
                                         </div>
-                                        <p className="text-xs text-white/50 font-serif italic">Review the persuasively drafted communication for your stakeholders.</p>
+                                        <p className="text-xs text-gray-400 font-light italic mt-1">
+                                            {localT.strategist.email_draft_desc}
+                                        </p>
                                     </motion.button>
                                 </div>
 
@@ -635,9 +637,9 @@ const SynthesisResult = ({ text, analysis, languageName, currentLang, t, onReset
             return `${localT.scribe?.title || "CORE THESIS"}: ${freeData.core_thesis}\n\n${localT.scribe?.strategic_pillars || "STRATEGIC PILLARS"}:\n${pillarsText}\n\n${localT.scribe?.tactical_steps || "TACTICAL STEPS"}:\n${tacticalText}`;
         }
         if (activeTab === 'strategist' && isPro && proData) {
-            const judgment = proData.judgment || proData.executive_judgement || "No judgment available";
-            const riskAudit = proData.riskAudit || proData.risk_audit || "No risk audit available";
-            return `${localT.strategist?.judgment || "JUDGMENT"}: ${judgment}\n\n${localT.strategist?.risk_audit || "RISK AUDIT"}: ${riskAudit}`;
+            const judgmentContent = analysis?.content?.executive_state || localT.strategist.no_judgment;
+            const riskContent = analysis?.content?.strategic_pillars || localT.strategist.no_risk_audit;
+            return `${localT.strategist?.judgment || "JUDGMENT"}: ${judgmentContent}\n\n${localT.strategist?.risk_audit || "RISK AUDIT"}: ${riskContent}`;
         }
         return "";
     };

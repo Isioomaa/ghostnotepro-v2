@@ -386,7 +386,7 @@ const AudioRecorder = ({ onUploadSuccess, t, languageName, isPro, initialAudio }
             onUploadSuccess(textValue, selectedPlatforms, analysisData);
         } catch (err) {
             console.error(err);
-            setError(err.message || t.messages.transmutation_fail || 'Transcription failed.');
+            setError(err.message || t.messages.transmutation_fail);
         } finally {
             setLoading(false);
         }
@@ -535,10 +535,10 @@ const AudioRecorder = ({ onUploadSuccess, t, languageName, isPro, initialAudio }
                                 </div>
                                 <div className="text-center space-y-2">
                                     <p className="text-[#F9F7F5] text-sm font-medium">
-                                        {isDragging ? 'Drop your audio file here' : 'Drag & drop or click to upload'}
+                                        {isDragging ? t.modes.drop_file : t.modes.drag_drop_upload}
                                     </p>
                                     <p className="text-[#666] text-xs">
-                                        MP3, WAV, M4A, WebM, OGG • Max 25MB
+                                        {t.modes.file_formats_limit}
                                     </p>
                                 </div>
                             </div>
@@ -618,9 +618,9 @@ const AudioRecorder = ({ onUploadSuccess, t, languageName, isPro, initialAudio }
 
                                     const newDraft = {
                                         id: Date.now(),
-                                        title: file ? file.name : "Untitled Voice Note",
+                                        title: file ? file.name : t.labels.untitled_note,
                                         transcript: RAW_DRAFT_PLACEHOLDER,
-                                        tag: "💭 Brain Dump",
+                                        tag: t.labels.brain_dump,
                                         created_at: new Date().toISOString(),
                                         audioData: audioBase64 // Persist audio!
                                     };

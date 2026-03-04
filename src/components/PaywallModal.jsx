@@ -50,26 +50,26 @@ const PaywallModal = ({ onClose, scenario = 'upsell', t }) => {
                 {scenario === 'limit_reached' ? (
                     <div className="mb-12">
                         <h2 className="font-serif text-3xl md:text-5xl text-[#a88e65]/90 mb-8 leading-tight tracking-tight px-4">
-                            You've reached your free tier limit
+                            {localT.paywall?.limit_reached || "You've reached your free tier limit"}
                         </h2>
                         <p className="text-gray-400 font-light leading-relaxed px-2 text-sm mb-8">
-                            You've used all 3 free transmutations. Your strategic thinking deserves unlimited processing.
+                            {localT.paywall?.limit_desc || "You've used all 3 free transmutations. Your strategic thinking deserves unlimited processing."}
                         </p>
 
                         <div className="text-left max-w-sm mx-auto space-y-4 mb-8 text-sm text-gray-400">
-                            <p className="font-bold text-[#a88e65]">With GhostNote Pro, you get:</p>
+                            <p className="font-bold text-[#a88e65]">{localT.paywall?.pro_features || "With GhostNote Pro, you get:"}</p>
                             <ul className="space-y-2 list-none">
                                 <li className="flex items-start">
-                                    <span className="text-[#a88e65] mr-2">✓</span> Unlimited Scribe transmutations
+                                    <span className="text-[#a88e65] mr-2">✓</span> {localT.paywall?.feature_unlimited || "Unlimited Scribe transmutations"}
                                 </li>
                                 <li className="flex items-start">
-                                    <span className="text-[#a88e65] mr-2">✓</span> Strategist Intelligence (Judyment, Risk Audits)
+                                    <span className="text-[#a88e65] mr-2">✓</span> {localT.paywall?.feature_intelligence || "Strategist Intelligence (Judgment, Risk Audits)"}
                                 </li>
                                 <li className="flex items-start">
-                                    <span className="text-[#a88e65] mr-2">✓</span> Priority processing
+                                    <span className="text-[#a88e65] mr-2">✓</span> {localT.paywall?.feature_priority || "Priority processing"}
                                 </li>
                                 <li className="flex items-start">
-                                    <span className="text-[#a88e65] mr-2">✓</span> Extended archive storage
+                                    <span className="text-[#a88e65] mr-2">✓</span> {localT.paywall?.feature_storage || "Extended archive storage"}
                                 </li>
                             </ul>
                         </div>
@@ -104,7 +104,7 @@ const PaywallModal = ({ onClose, scenario = 'upsell', t }) => {
                     {scenario === 'limit_reached' && (
                         <div className="-mt-6">
                             <button className="text-xs text-gray-600 hover:text-gray-400 underline transition-colors">
-                                View plans
+                                {localT.paywall?.view_plans || "View plans"}
                             </button>
                         </div>
                     )}
@@ -124,7 +124,7 @@ const PaywallModal = ({ onClose, scenario = 'upsell', t }) => {
 
                         {scenario === 'limit_reached' && (
                             <p className="text-[10px] text-gray-700 mt-4">
-                                Questions? <a href="mailto:support@ghostnotepro.com" className="underline hover:text-gray-500">Contact support</a>
+                                {localT.paywall?.support_contact || "Questions? Contact support"} <a href="mailto:support@ghostnotepro.com" className="underline hover:text-gray-500">{localT.paywall?.support_label || "Contact support"}</a>
                             </p>
                         )}
                     </div>

@@ -9,7 +9,7 @@ import PublicReadView from './components/PublicReadView';
 import DraftsView from './components/DraftsView';
 import TheLoopDashboard from './components/TheLoopDashboard';
 import { RAW_DRAFT_PLACEHOLDER } from './components/AudioRecorder';
-import { TRANSLATIONS, getLanguageName } from './constants/languages';
+import { TRANSLATIONS, getLanguageName, LANGUAGES } from './constants/languages';
 import { analyzeText } from './utils/analysis';
 import { isPro as getInitialPro, PRO_STATUS_CHANGED_EVENT } from './utils/usageTracker';
 import { PrivacyPolicy, TermsOfService, RefundPolicy } from './components/LegalDocs';
@@ -17,10 +17,21 @@ import LanguageSelector from './components/LanguageSelector';
 import { FaLinkedin, FaXTwitter, FaWhatsapp, FaArrowLeft } from 'react-icons/fa6';
 import PaywallModal from './components/PaywallModal';
 
+const detectLanguage = () => {
+  try {
+    const browserLang = (navigator.languages && navigator.languages[0]) || navigator.language || 'en';
+    const shortLang = browserLang.split('-')[0].toUpperCase();
+    const supported = LANGUAGES.find(l => l.code === shortLang);
+    return supported ? shortLang : 'EN';
+  } catch (err) {
+    return 'EN';
+  }
+};
+
 function MainApp() {
   const [transcription, setTranscription] = useState(null);
   const [analysis, setAnalysis] = useState(null);
-  const [currentLang, setCurrentLang] = useState('EN');
+  const [currentLang, setCurrentLang] = useState(detectLanguage());
   const [activeView, setActiveView] = useState('main'); // 'main', 'privacy', 'terms', 'refund'
   const [showToast, setShowToast] = useState(false);
   const [showPaywall, setShowPaywall] = useState(false);
@@ -180,7 +191,7 @@ function MainApp() {
             title="Back to Home"
           >
             <FaArrowLeft className="text-sm group-hover:-translate-x-1 transition-transform" />
-            <span className="text-[10px] uppercase tracking-widest font-bold">Back to Home</span>
+            <span className="text-[10px] uppercase tracking-widest font-bold">{t.buttons.back_to_home}</span>
           </motion.button>
         )}
 
@@ -240,6 +251,15 @@ function MainApp() {
             >
               {t.buttons.gift}
             </button>
+            {activeView !== 'main' && (
+              <button
+                onClick={() => setActiveView('main')}
+                className="flex items-center space-x-2 text-zinc-600 hover:text-tactical-amber transition-colors"
+              >
+                <FaArrowLeft className="w-3 h-3" />
+                <span className="text-[10px] uppercase tracking-widest font-bold">{t.buttons.back_to_home}</span>
+              </button>
+            )}
             <span className="text-[10px] text-zinc-800 font-mono tracking-tighter">SYSTEM v1.0.42</span>
           </div>
         </div>

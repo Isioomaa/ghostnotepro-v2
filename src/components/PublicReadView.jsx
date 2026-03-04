@@ -49,7 +49,7 @@ const PublicReadView = () => {
                 // Set Direction
                 document.documentElement.dir = langCode === 'AR' ? 'rtl' : 'ltr';
             } else {
-                setError("Strategy session not found.");
+                setError(t.messages?.archive_fail || "Strategy session not found.");
             }
             setLoading(false);
         };
