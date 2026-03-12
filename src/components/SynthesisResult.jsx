@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { FaCopy, FaShareAlt, FaChevronDown, FaLock, FaListUl } from 'react-icons/fa';
 import { generateExecutiveSuite, updateDraft } from '../services/gemini';
@@ -30,9 +30,36 @@ const SkeletonDashboard = () => (
     </div>
 );
 
+// Transparency Label Component (Layer 2 - Decision Transparency)
+const TransparencyLabel = ({ type, t }) => {
+    const [showTooltip, setShowTooltip] = useState(false);
+    const label = type === 'context'
+        ? (t?.messages?.expanded_from_context || "Expanded from context")
+        : (t?.messages?.strategic_implication || "Interpreted as strategic implication");
+    const tooltip = t?.messages?.expanded_tooltip || "This section was developed beyond what was explicitly stated in your note.";
+
+    return (
+        <span
+            className="relative inline-flex items-center cursor-help"
+            onMouseEnter={() => setShowTooltip(true)}
+            onMouseLeave={() => setShowTooltip(false)}
+            onClick={() => setShowTooltip(!showTooltip)}
+        >
+            <span className="text-[10px] italic text-gray-400 font-light tracking-wide ml-2 border-b border-dashed border-gray-500">
+                {label}
+            </span>
+            {showTooltip && (
+                <span className="absolute bottom-full left-0 mb-2 px-3 py-2 bg-gray-800 text-gray-300 text-[10px] rounded shadow-lg whitespace-nowrap z-50 border border-gray-700">
+                    {tooltip}
+                </span>
+            )}
+        </span>
+    );
+};
+
 const SynthesisResult = ({ text, analysis, languageName, currentLang, t, onReset, isPro, onShowToast, initialData, draftId, onEdit, industry }) => {
     const [data, setData] = useState(null);
-    const [sessionId, setSessionId] = useState(null); // Kept for future use
+    const [sessionId, setSessionId] = useState(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [activeTab, setActiveTab] = useState('scribe');
@@ -47,32 +74,73 @@ const SynthesisResult = ({ text, analysis, languageName, currentLang, t, onReset
     const [isEditing, setIsEditing] = useState(false);
     const [editableText, setEditableText] = useState(text);
 
+    // Post-Generation Editing State (Improvement 2)
+    const [isEditingOutput, setIsEditingOutput] = useState(false);
+    const [editedData, setEditedData] = useState(null);
+    const [originalData, setOriginalData] = useState(null);
+
     // Default translation fallback
     const localT = t || TRANSLATIONS.EN;
 
-    // Initialize with initialData if provided (e.g. from a loaded draft)
+    // Initialize with initialData if provided
     useEffect(() => {
         if (initialData) {
             setData(initialData);
+            setOriginalData(JSON.parse(JSON.stringify(initialData)));
         }
     }, [initialData]);
 
-    // Update editableText if text prop changes (e.g. loading a draft)
+    // Update editableText if text prop changes
     useEffect(() => {
         setEditableText(text);
     }, [text]);
 
+    // When data changes (from generation), store original
+    useEffect(() => {
+        if (data && !originalData) {
+            setOriginalData(JSON.parse(JSON.stringify(data)));
+        }
+    }, [data]);
+
+    // Helper: count total word count in output
+    const getOutputWordCount = (outputData) => {
+        if (!outputData) return 0;
+        let allText = '';
+        const d = outputData.free_tier || outputData;
+        if (d.core_thesis) allText += d.core_thesis + ' ';
+        if (d.strategic_pillars) {
+            d.strategic_pillars.forEach(p => {
+                allText += (p.title || '') + ' ' + (p.rich_description || p.description || '') + ' ';
+            });
+        }
+        if (d.tactical_steps) {
+            d.tactical_steps.forEach(s => { allText += s + ' '; });
+        }
+        return allText.trim().split(/\s+/).length;
+    };
+
+    // Helper: check if output is short (< 100 words)
+    const isShortOutput = (outputData) => getOutputWordCount(outputData) < 100;
+
+    // Helper: get theme count for transparency
+    const getThemeCount = (outputData) => {
+        if (!outputData) return 0;
+        const d = outputData.free_tier || outputData;
+        return (d.strategic_pillars?.length || 0);
+    };
+
     const handleGenerate = async () => {
         setLoading(true);
         setError(null);
+        setOriginalData(null); // Reset original on new generation
+        setEditedData(null);
+        setIsEditingOutput(false);
         try {
             console.log('🚀 Starting generation. isPro:', isPro);
             console.log('--- Industry Context:', industry);
 
-            // Always generate Scribe content (base layer) using edited text
             const scribePromise = generateExecutiveSuite(editableText, analysis, languageName, 'scribe', isPro, industry, analysis?.emphasis_signals);
 
-            // If Pro, also generate Strategist content
             if (isPro) {
                 console.log('💎 Pro user detected. Triggering Strategist...');
             } else {
@@ -88,47 +156,38 @@ const SynthesisResult = ({ text, analysis, languageName, currentLang, t, onReset
             const scribeResult = results[0];
             const strategistResult = results[1];
 
-            console.log('Scribe Result Status:', scribeResult.status);
-            console.log('Strategist Result Status:', strategistResult.status);
-
             let combinedResult = {};
             let strategistError = null;
 
             if (scribeResult.status === 'fulfilled' && scribeResult.value) {
                 combinedResult = { ...combinedResult, ...scribeResult.value };
-                console.log('✅ Scribe fulfilled with keys:', Object.keys(scribeResult.value));
             } else if (scribeResult.status === 'rejected') {
                 console.error('❌ Scribe failed:', scribeResult.reason);
             }
 
             if (strategistResult.status === 'fulfilled' && strategistResult.value) {
                 combinedResult = { ...combinedResult, ...strategistResult.value };
-                console.log('✅ Strategist fulfilled with keys:', Object.keys(strategistResult.value));
             } else if (strategistResult.status === 'rejected') {
                 console.error('❌ Strategist failed:', strategistResult.reason);
-                strategistError = strategistResult.reason?.message || "Strategist generation failed.";
+                strategistError = strategistResult.reason?.message || "The Strategist could not process this session.";
             }
 
-            console.log('🏁 Final Combined Data keys:', Object.keys(combinedResult));
-
             if (Object.keys(combinedResult).length === 0) {
-                throw new Error("Both generation modes failed. Please try again.");
+                throw new Error("Both generation modes encountered issues. Please try again.");
             }
 
             setData(combinedResult);
+            setOriginalData(JSON.parse(JSON.stringify(combinedResult)));
             if (strategistError) setError(strategistError);
 
-            // Auto-save output to drafts for retrieval
+            // Auto-save output
             if (draftId) {
-                console.log(`💾 Auto-updating draft ${draftId} with generated content.`);
                 updateDraft(draftId, {
                     content: combinedResult,
                     transcript: editableText,
                     last_updated: new Date().toISOString()
                 });
             } else {
-                // Create a new saved output entry (direct transmutation without prior draft)
-                console.log('💾 Auto-saving generated output as new entry.');
                 const { generateTitle } = await import('../services/gemini');
                 const aiTitle = await generateTitle(editableText);
 
@@ -148,7 +207,6 @@ const SynthesisResult = ({ text, analysis, languageName, currentLang, t, onReset
                     const existing = JSON.parse(localStorage.getItem('ghostnote_drafts') || '[]');
                     const updated = [newEntry, ...existing];
                     localStorage.setItem('ghostnote_drafts', JSON.stringify(updated));
-                    console.log('✅ Output saved:', aiTitle);
                 } catch (err) {
                     console.error('Failed to save output:', err);
                 }
@@ -156,10 +214,71 @@ const SynthesisResult = ({ text, analysis, languageName, currentLang, t, onReset
 
         } catch (err) {
             console.error('❌ Generation failed:', err);
-            setError(localT.messages?.transmutation_fail || "The transmuter encountered an error.");
+            setError(localT.messages?.transmutation_fail || "The transmuter encountered a temporary issue. Give it another go.");
         } finally {
             setLoading(false);
         }
+    };
+
+    // Post-Generation Editing Handlers (Improvement 2)
+    const handleStartEditOutput = () => {
+        setEditedData(JSON.parse(JSON.stringify(data)));
+        setIsEditingOutput(true);
+    };
+
+    const handleSaveEditedOutput = () => {
+        setData(editedData);
+        setIsEditingOutput(false);
+        onShowToast(localT.messages?.output_saved || "Your edits have been saved.");
+
+        // Save to drafts
+        if (draftId) {
+            updateDraft(draftId, {
+                content: editedData,
+                last_updated: new Date().toISOString()
+            });
+        } else {
+            try {
+                const drafts = JSON.parse(localStorage.getItem('ghostnote_drafts') || '[]');
+                if (drafts.length > 0) {
+                    drafts[0].content = editedData;
+                    drafts[0].last_updated = new Date().toISOString();
+                    localStorage.setItem('ghostnote_drafts', JSON.stringify(drafts));
+                }
+            } catch (err) {
+                console.error('Failed to save edited output:', err);
+            }
+        }
+    };
+
+    const handleRevertOutput = () => {
+        if (originalData) {
+            setData(JSON.parse(JSON.stringify(originalData)));
+            setEditedData(null);
+            setIsEditingOutput(false);
+            onShowToast(localT.messages?.reverted || "Restored to the original output.");
+        }
+    };
+
+    const updateEditedField = (path, value) => {
+        const updated = { ...editedData };
+        const d = updated.free_tier || updated;
+        const keys = path.split('.');
+        let target = d;
+        for (let i = 0; i < keys.length - 1; i++) {
+            if (keys[i].match(/^\d+$/)) {
+                target = target[parseInt(keys[i])];
+            } else {
+                target = target[keys[i]];
+            }
+        }
+        const lastKey = keys[keys.length - 1];
+        if (lastKey.match(/^\d+$/)) {
+            target[parseInt(lastKey)] = value;
+        } else {
+            target[lastKey] = value;
+        }
+        setEditedData({ ...updated });
     };
 
     const handleSealWager = async () => {
@@ -169,9 +288,9 @@ const SynthesisResult = ({ text, analysis, languageName, currentLang, t, onReset
             const { sealWager } = await import('../services/gemini');
             await sealWager(sessionId, wagerPrediction, wagerDays);
             setShowWagerModal(false);
-            onShowToast(localT.wager?.success || "Wager sealed.");
+            onShowToast(localT.wager?.success || "Time Capsule Sealed. Judgment locked.");
         } catch (err) {
-            onShowToast(localT.wager?.fail || "Failed to seal wager.");
+            onShowToast(localT.wager?.fail || "Could not seal the time capsule at this time.");
         } finally {
             setSealingWager(false);
         }
@@ -183,7 +302,7 @@ const SynthesisResult = ({ text, analysis, languageName, currentLang, t, onReset
         onShowToast(`${label} ${msg}`);
     };
 
-    // Derived Tabs using Translations
+    // Derived Tabs
     const tabs = [
         {
             id: 'scribe',
@@ -196,6 +315,21 @@ const SynthesisResult = ({ text, analysis, languageName, currentLang, t, onReset
             subtext: localT.strategist?.description || "Executive execution"
         }
     ];
+
+    // Process Transparency line (Layer 1)
+    const renderProcessTransparency = (outputData) => {
+        const duration = analysis?.duration || "0m 0s";
+        const themes = getThemeCount(outputData);
+        if (themes === 0) return null;
+        const line = (localT.messages?.process_transparency || "Structured from {duration} of audio — {themes} key themes identified.")
+            .replace('{duration}', duration)
+            .replace('{themes}', themes);
+        return (
+            <p className="text-[11px] text-gray-400 italic font-light tracking-wide mt-2 mb-4 text-center">
+                {line}
+            </p>
+        );
+    };
 
     if (!data) {
         return (
@@ -234,7 +368,7 @@ const SynthesisResult = ({ text, analysis, languageName, currentLang, t, onReset
                                     onClick={() => {
                                         setIsEditing(false);
                                         if (onEdit) onEdit(editableText);
-                                        handleGenerate(); // User flow: Save & Generate
+                                        handleGenerate();
                                     }}
                                     className="flex-1 py-3 bg-tactical-amber text-black text-[10px] font-bold uppercase tracking-widest rounded-sm hover:bg-white transition-all"
                                 >
@@ -329,7 +463,7 @@ const SynthesisResult = ({ text, analysis, languageName, currentLang, t, onReset
                             >
                                 {localT.labels?.generate_suite || "GENERATE EXECUTIVE SUITE"}
                             </motion.button>
-                            {error && <p className="mt-4 text-red-500 text-sm">{error}</p>}
+                            {error && <p className="mt-4 text-[#A88E65] text-sm italic">{error}</p>}
                         </>
                     )}
                 </div>
@@ -340,11 +474,10 @@ const SynthesisResult = ({ text, analysis, languageName, currentLang, t, onReset
     const getTabContent = (id) => {
         if (!data) return "Initializing...";
 
-        // Robust check for data existence
-        // Scribe data usually has core_thesis
-        // Strategist data has judgment (or executive_judgement as legacy fallback)
         const freeData = data.free_tier || (data.core_thesis ? data : null);
         const proData = data.pro_tier || (data.judgment || data.executive_judgement ? data : null);
+        const currentEditData = isEditingOutput ? (editedData?.free_tier || editedData) : null;
+        const currentEditProData = isEditingOutput ? (editedData?.pro_tier || editedData) : null;
 
         if (id === 'scribe') {
             if (!freeData) return (
@@ -353,8 +486,25 @@ const SynthesisResult = ({ text, analysis, languageName, currentLang, t, onReset
                 </div>
             );
 
+            const shortOutput = isShortOutput(freeData);
+
+            // Insufficient input check (Improvement 5)
+            const wordCount = getOutputWordCount(freeData);
+            if (wordCount < 10 && !freeData.core_thesis) {
+                return (
+                    <div className="flex flex-col items-center justify-center p-16 text-center">
+                        <p className="text-[#A88E65] text-base font-serif italic max-w-md leading-relaxed">
+                            {localT.messages?.insufficient_input || "Insufficient input. Please record at least 60 seconds of your strategic thinking."}
+                        </p>
+                    </div>
+                );
+            }
+
             return (
-                <div className="space-y-8 md:space-y-12 animate-in fade-in duration-700 bg-white text-gray-900 p-5 md:p-12">
+                <div className={`space-y-8 md:space-y-12 animate-in fade-in duration-700 bg-white text-gray-900 p-5 md:p-12 ${shortOutput ? 'compact-output' : ''}`}>
+                    {/* Process Transparency (Layer 1) */}
+                    {renderProcessTransparency(freeData)}
+
                     {freeData.core_thesis && (
                         <motion.div
                             initial={{ opacity: 0, y: 20 }}
@@ -362,9 +512,20 @@ const SynthesisResult = ({ text, analysis, languageName, currentLang, t, onReset
                             transition={{ duration: 0.5, delay: 0 }}
                         >
                             <h4 className="font-sans font-bold uppercase tracking-widest text-sm md:text-xs text-gold-600 mb-4 md:mb-6">{localT.scribe?.core_thesis || "CORE THESIS"}</h4>
-                            <div className="font-playfair font-bold text-2xl md:text-5xl leading-tight text-gray-900">
-                                "{freeData.core_thesis}"
-                            </div>
+                            {isEditingOutput ? (
+                                <div
+                                    contentEditable
+                                    suppressContentEditableWarning
+                                    onBlur={(e) => updateEditedField('core_thesis', e.target.textContent)}
+                                    className="font-playfair font-bold text-2xl md:text-5xl leading-tight text-gray-900 border border-dashed border-gold-600/30 p-4 rounded focus:outline-none focus:border-gold-600"
+                                >
+                                    {(currentEditData || freeData).core_thesis}
+                                </div>
+                            ) : (
+                                <div className="font-playfair font-bold text-2xl md:text-5xl leading-tight text-gray-900">
+                                    "{freeData.core_thesis}"
+                                </div>
+                            )}
                         </motion.div>
                     )}
 
@@ -378,10 +539,37 @@ const SynthesisResult = ({ text, analysis, languageName, currentLang, t, onReset
                             <div className="space-y-8 md:space-y-12">
                                 {freeData.strategic_pillars.map((pillar, idx) => (
                                     <div key={idx} className="border-l-2 border-gold-600/20 pl-6 md:pl-8 py-2">
-                                        <h5 className="font-sans font-bold text-gray-900 text-base md:text-lg uppercase tracking-wider mb-2 md:mb-4 leading-tight">{pillar.title}</h5>
-                                        <p className="font-serif text-base md:text-xl text-gray-700 leading-relaxed max-w-2xl">
-                                            {pillar.rich_description || pillar.description}
-                                        </p>
+                                        {isEditingOutput ? (
+                                            <>
+                                                <div
+                                                    contentEditable
+                                                    suppressContentEditableWarning
+                                                    onBlur={(e) => updateEditedField(`strategic_pillars.${idx}.title`, e.target.textContent)}
+                                                    className="font-sans font-bold text-gray-900 text-base md:text-lg uppercase tracking-wider mb-2 md:mb-4 leading-tight border border-dashed border-gold-600/30 p-2 rounded focus:outline-none focus:border-gold-600"
+                                                >
+                                                    {(currentEditData?.strategic_pillars?.[idx] || pillar).title}
+                                                </div>
+                                                <div
+                                                    contentEditable
+                                                    suppressContentEditableWarning
+                                                    onBlur={(e) => updateEditedField(`strategic_pillars.${idx}.rich_description`, e.target.textContent)}
+                                                    className="font-serif text-base md:text-xl text-gray-700 leading-relaxed max-w-2xl border border-dashed border-gray-300/50 p-2 rounded focus:outline-none focus:border-gold-600"
+                                                >
+                                                    {(currentEditData?.strategic_pillars?.[idx] || pillar).rich_description || (currentEditData?.strategic_pillars?.[idx] || pillar).description}
+                                                </div>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <h5 className="font-sans font-bold text-gray-900 text-base md:text-lg uppercase tracking-wider mb-2 md:mb-4 leading-tight">
+                                                    {pillar.title}
+                                                    {/* Layer 2: Decision Transparency — mark expanded pillars */}
+                                                    {idx >= 2 && <TransparencyLabel type="context" t={localT} />}
+                                                </h5>
+                                                <p className="font-serif text-base md:text-xl text-gray-700 leading-relaxed max-w-2xl">
+                                                    {pillar.rich_description || pillar.description}
+                                                </p>
+                                            </>
+                                        )}
                                     </div>
                                 ))}
                             </div>
@@ -401,7 +589,18 @@ const SynthesisResult = ({ text, analysis, languageName, currentLang, t, onReset
                                         <span className="mr-3 md:mr-4 w-6 h-6 rounded-full bg-gold-600/5 flex items-center justify-center text-gold-600 text-[10px] font-bold border border-gold-600/10 group-hover:bg-gold-600 group-hover:text-white transition-all flex-shrink-0">
                                             {idx + 1}
                                         </span>
-                                        <span className="flex-1 pt-0.5 font-serif text-base">{step}</span>
+                                        {isEditingOutput ? (
+                                            <div
+                                                contentEditable
+                                                suppressContentEditableWarning
+                                                onBlur={(e) => updateEditedField(`tactical_steps.${idx}`, e.target.textContent)}
+                                                className="flex-1 pt-0.5 font-serif text-base border border-dashed border-gray-300/50 p-2 rounded focus:outline-none focus:border-gold-600"
+                                            >
+                                                {(currentEditData?.tactical_steps?.[idx] || step)}
+                                            </div>
+                                        ) : (
+                                            <span className="flex-1 pt-0.5 font-serif text-base">{step}</span>
+                                        )}
                                     </li>
                                 ))}
                             </ul>
@@ -419,9 +618,9 @@ const SynthesisResult = ({ text, analysis, languageName, currentLang, t, onReset
                             <div className="w-16 h-16 rounded-full bg-yellow-500 flex items-center justify-center mb-6 shadow-xl">
                                 <span className="text-2xl">🔒</span>
                             </div>
-                            <h3 className="font-playfair font-bold text-2xl text-white mb-4">{localT.strategist?.unlock_title || "Unlock Executive Level"}</h3>
+                            <h3 className="font-playfair font-bold text-2xl text-white mb-4">{localT.strategist?.unlock_title || "Unlock The Strategist"}</h3>
                             <p className="text-gray-300 text-sm max-w-xs mb-8 leading-relaxed font-sans">
-                                {localT.strategist?.unlock_desc || "Upgrade to Pro to see this content."}
+                                {localT.strategist?.unlock_desc || "The Strategist is your dedicated Chief of Staff suite. Upgrade to Pro to access Executive Judgment, Risk Audits, and ready-to-send Emails."}
                             </p>
                             <motion.button
                                 onClick={() => setShowPaywall(true)}
@@ -450,11 +649,24 @@ const SynthesisResult = ({ text, analysis, languageName, currentLang, t, onReset
                                     >
                                         <div className="flex items-center space-x-2 mb-4 md:mb-6">
                                             <span className="pulse-dot"></span>
-                                            <h4 className="font-sans font-bold uppercase tracking-widest text-sm md:text-xs text-tactical-amber">{localT.strategist?.judgment || "EXECUTIVE JUDGMENT"}</h4>
+                                            <h4 className="font-sans font-bold uppercase tracking-widest text-sm md:text-xs text-tactical-amber">
+                                                {localT.strategist?.judgment || "EXECUTIVE JUDGMENT"}
+                                                <TransparencyLabel type="implication" t={localT} />
+                                            </h4>
                                         </div>
-                                        <div className="font-sans text-lg md:text-xl font-medium leading-snug text-white">
-                                            {renderMarkdownBlock(proData.judgment || proData.executive_judgement)}
-                                        </div>
+                                        {isEditingOutput ? (
+                                            <div
+                                                contentEditable
+                                                suppressContentEditableWarning
+                                                onBlur={(e) => updateEditedField('judgment', e.target.innerHTML)}
+                                                className="font-sans text-lg md:text-xl font-medium leading-snug text-white border border-dashed border-tactical-amber/30 p-4 rounded focus:outline-none focus:border-tactical-amber"
+                                                dangerouslySetInnerHTML={{ __html: (currentEditProData?.judgment || currentEditProData?.executive_judgement || proData.judgment || proData.executive_judgement) }}
+                                            />
+                                        ) : (
+                                            <div className="font-sans text-lg md:text-xl font-medium leading-snug text-white">
+                                                {renderMarkdownBlock(proData.judgment || proData.executive_judgement)}
+                                            </div>
+                                        )}
                                     </motion.div>
                                 )}
 
@@ -470,9 +682,19 @@ const SynthesisResult = ({ text, analysis, languageName, currentLang, t, onReset
                                             <span className="pulse-dot"></span>
                                             <h4 className="font-sans font-bold uppercase tracking-widest text-sm md:text-xs text-red-400">{localT.strategist?.risk_audit || "RISK AUDIT"}</h4>
                                         </div>
-                                        <div className="font-mono text-xs md:text-sm text-red-400 bg-red-900/20 border border-red-900/30 p-5 md:p-8 rounded-sm leading-relaxed">
-                                            {renderMarkdownBlock(proData.riskAudit || proData.risk_audit)}
-                                        </div>
+                                        {isEditingOutput ? (
+                                            <div
+                                                contentEditable
+                                                suppressContentEditableWarning
+                                                onBlur={(e) => updateEditedField('riskAudit', e.target.innerHTML)}
+                                                className="font-mono text-xs md:text-sm text-red-400 bg-red-900/20 border border-dashed border-red-900/30 p-5 md:p-8 rounded-sm leading-relaxed focus:outline-none focus:border-red-500"
+                                                dangerouslySetInnerHTML={{ __html: (currentEditProData?.riskAudit || currentEditProData?.risk_audit || proData.riskAudit || proData.risk_audit) }}
+                                            />
+                                        ) : (
+                                            <div className="font-mono text-xs md:text-sm text-red-400 bg-red-900/20 border border-red-900/30 p-5 md:p-8 rounded-sm leading-relaxed">
+                                                {renderMarkdownBlock(proData.riskAudit || proData.risk_audit)}
+                                            </div>
+                                        )}
                                     </motion.div>
                                 )}
                             </div>
@@ -559,7 +781,7 @@ const SynthesisResult = ({ text, analysis, languageName, currentLang, t, onReset
                                         <h4 className="font-bold text-white text-sm uppercase tracking-widest">{localT.wager?.lock_title || "THE LOOP"}</h4>
                                     </div>
                                     <p className="text-gray-400 text-xs mb-8 italic">
-                                        {localT.wager?.lock_desc || "Lock in your prediction now."}
+                                        {localT.wager?.lock_desc || "Don't just hope. Predict. Lock this decision to test your judgment accuracy later."}
                                     </p>
 
                                     {!showWagerModal ? (
@@ -581,7 +803,7 @@ const SynthesisResult = ({ text, analysis, languageName, currentLang, t, onReset
                                                 <textarea
                                                     value={wagerPrediction}
                                                     onChange={(e) => setWagerPrediction(e.target.value)}
-                                                    placeholder={localT.wager?.prediction_placeholder || "I predict that..."}
+                                                    placeholder={localT.wager?.prediction_placeholder || "What is the expected outcome in reality?"}
                                                     className="w-full bg-black/40 border border-white/10 rounded p-4 text-white text-sm focus:border-tactical-amber outline-none transition-colors h-24"
                                                 />
                                             </div>
@@ -659,10 +881,58 @@ const SynthesisResult = ({ text, analysis, languageName, currentLang, t, onReset
                     <span>{localT.labels?.new_session || "NEW SESSION"}</span>
                 </motion.button>
 
-                <div className="text-[10px] md:text-[11px] uppercase tracking-[0.2em] text-[#A88E65] font-bold">
-                    {localT.labels?.exec_status || "STATUS"}: {isPro ? (localT.labels?.pro || "PRO") : (localT.labels?.standard || "STANDARD")}
+                <div className="flex items-center space-x-4">
+                    {/* Edit Output Button (Improvement 2) */}
+                    {data && !isEditingOutput && (
+                        <button
+                            onClick={handleStartEditOutput}
+                            className="text-[10px] uppercase tracking-[0.2em] text-[#A88E65] hover:text-white transition-colors font-bold flex items-center space-x-1"
+                        >
+                            <span>✏️</span>
+                            <span>{localT.buttons?.edit_output || "Edit"}</span>
+                        </button>
+                    )}
+                    <div className="text-[10px] md:text-[11px] uppercase tracking-[0.2em] text-[#A88E65] font-bold">
+                        {localT.labels?.exec_status || "STATUS"}: {isPro ? (localT.labels?.pro || "PRO") : (localT.labels?.standard || "STANDARD")}
+                    </div>
                 </div>
             </div>
+
+            {/* Edit Output Action Bar (Improvement 2) */}
+            {isEditingOutput && (
+                <div className="mb-6 flex flex-wrap justify-center gap-3 px-4">
+                    <button
+                        onClick={handleSaveEditedOutput}
+                        className="px-6 py-2.5 bg-[#A88E65] text-black text-[10px] font-bold uppercase tracking-widest rounded-sm hover:bg-white transition-all"
+                    >
+                        {localT.buttons?.save_edited || "Save"}
+                    </button>
+                    <button
+                        onClick={() => {
+                            handleSaveEditedOutput();
+                            // Trigger share view by scrolling to share actions
+                            setTimeout(() => {
+                                document.querySelector('.share-actions-section')?.scrollIntoView({ behavior: 'smooth' });
+                            }, 300);
+                        }}
+                        className="px-6 py-2.5 border border-[#A88E65] text-[#A88E65] text-[10px] font-bold uppercase tracking-widest rounded-sm hover:bg-[#A88E65] hover:text-black transition-all"
+                    >
+                        {localT.buttons?.share_edited || "Share"}
+                    </button>
+                    <button
+                        onClick={handleRevertOutput}
+                        className="px-6 py-2.5 border border-white/10 text-gray-500 text-[10px] font-bold uppercase tracking-widest rounded-sm hover:text-white transition-all"
+                    >
+                        {localT.buttons?.revert_original || "Revert to Original"}
+                    </button>
+                    <button
+                        onClick={() => { setIsEditingOutput(false); setEditedData(null); }}
+                        className="px-6 py-2.5 text-gray-600 text-[10px] font-bold uppercase tracking-widest hover:text-white transition-all"
+                    >
+                        {localT.buttons?.cancel || "Cancel"}
+                    </button>
+                </div>
+            )}
 
             {/* The Main Card */}
             <div className="bg-white w-full max-w-4xl mx-auto rounded-xl shadow-[0_40px_100px_-20px_rgba(0,0,0,0.15)] overflow-hidden border border-gray-100">
@@ -716,10 +986,10 @@ const SynthesisResult = ({ text, analysis, languageName, currentLang, t, onReset
                                 localStorage.setItem(`ghostnote_archive_${id}`, JSON.stringify(archiveData));
                                 const url = `https://www.ghostnotepro.com/archive/${id}`;
                                 navigator.clipboard.writeText(url);
-                                onShowToast(localT.messages?.archive_success || "Archive Saved");
+                                onShowToast(localT.messages?.archive_success || "Strategic brief archived. Link copied.");
                             } catch (err) {
                                 console.error("Archive failed", err);
-                                onShowToast(localT.messages?.archive_fail || "Failed to Archive");
+                                onShowToast(localT.messages?.archive_fail || "Archiving was interrupted. Please try once more.");
                             }
                         }}
                         className="w-full md:w-auto bg-black text-white border border-gray-800 px-8 py-4 font-sans text-xs font-bold uppercase tracking-[0.2em] hover:bg-tactical-amber hover:text-black hover:border-tactical-amber transition-all shadow-lg"
@@ -749,16 +1019,18 @@ const SynthesisResult = ({ text, analysis, languageName, currentLang, t, onReset
             )}
 
             {/* Share Actions */}
-            <ShareActions
-                sessionId={sessionId}
-                textToShare={getTextToShare()}
-                analysisResult={data}
-                url={data ? `https://www.ghostnotepro.com/archive/${draftId || 'latest'}` : "https://www.ghostnotepro.com"}
-                isPro={isPro}
-                onPaywallTrigger={() => setShowPaywall(true)}
-                onShowToast={onShowToast}
-                t={localT}
-            />
+            <div className="share-actions-section">
+                <ShareActions
+                    sessionId={sessionId}
+                    textToShare={getTextToShare()}
+                    analysisResult={data}
+                    url={data ? `https://www.ghostnotepro.com/archive/${draftId || 'latest'}` : "https://www.ghostnotepro.com"}
+                    isPro={isPro}
+                    onPaywallTrigger={() => setShowPaywall(true)}
+                    onShowToast={onShowToast}
+                    t={localT}
+                />
+            </div>
 
             {/* Paywall Modal */}
             {showPaywall && (

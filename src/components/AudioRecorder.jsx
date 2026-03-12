@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { getUsageCount, incrementUsageCount, LIMIT } from '../utils/usageTracker';
+import { getUsageCount, incrementUsageCount, hasReachedLimit, getDailyLimitMessage, LIMIT } from '../utils/usageTracker';
 import { transmuteAudio, saveDraft, generateTitle } from '../services/gemini';
 import { extractHighEmphasisSignals } from '../utils/textAnalysis';
 import PaywallModal from './PaywallModal';
@@ -13,7 +13,6 @@ const PLATFORMS = [
 ];
 
 const AudioRecorder = ({ onUploadSuccess, t, languageName, isPro, initialAudio }) => {
-    // Robust Boolean Check (Handles String/Boolean from Props)
     const isProActive = String(isPro) === 'true' || isPro === true;
 
     const [file, setFile] = useState(null);
@@ -28,49 +27,70 @@ const AudioRecorder = ({ onUploadSuccess, t, languageName, isPro, initialAudio }
     const [synthesisStep, setSynthesisStep] = useState(0);
     const [showTransmuteButton, setShowTransmuteButton] = useState(false);
     const [savingDraft, setSavingDraft] = useState(false);
-    // Upload enhancement states
     const [isDragging, setIsDragging] = useState(false);
     const [fileDuration, setFileDuration] = useState(null);
     const [filePreviewUrl, setFilePreviewUrl] = useState(null);
+    // Staged loading
+    const [loadingStartTime, setLoadingStartTime] = useState(null);
+    const [showDelayedMessage, setShowDelayedMessage] = useState(false);
+    // Audio quality indicator (Layer 3 - Transparency)
+    const [audioQualityIssue, setAudioQualityIssue] = useState(null);
 
     const inputRef = useRef(null);
     const mediaRecorderRef = useRef(null);
     const audioChunksRef = useRef([]);
     const timerRef = useRef(null);
+    const audioContextRef = useRef(null);
+    const analyserRef = useRef(null);
+    const qualityCheckRef = useRef(null);
 
-    // Constants for file validation
-    const MAX_FILE_SIZE = 25 * 1024 * 1024; // 25MB
+    const MAX_FILE_SIZE = 25 * 1024 * 1024;
     const ACCEPTED_FORMATS = ['audio/mpeg', 'audio/wav', 'audio/mp4', 'audio/x-m4a', 'audio/webm', 'audio/ogg'];
 
-    const SYNTHESIS_STEPS = [
-        t.messages.uploading,
-        t.messages.transcribing,
-        t.messages.extracting,
-        t.messages.formatting
+    // 3-stage loading messages (Improvement 4)
+    const STAGED_STEPS = [
+        t.messages?.stage_listening || "Listening to your note...",
+        t.messages?.stage_extracting || "Extracting your strategy...",
+        t.messages?.stage_preparing || "Preparing your document..."
     ];
 
-    // Cycle through synthesis steps
+    // Staged loading: cycle through 3 stages
     useEffect(() => {
         if (loading) {
             setSynthesisStep(0);
+            setLoadingStartTime(Date.now());
+            setShowDelayedMessage(false);
+
             const interval = setInterval(() => {
                 setSynthesisStep(prev => {
-                    if (prev < SYNTHESIS_STEPS.length - 1) {
+                    if (prev < STAGED_STEPS.length - 1) {
+                        setShowDelayedMessage(false); // Reset delayed message on stage change
                         return prev + 1;
                     }
                     return prev;
                 });
-            }, 2000);
+            }, 3500);
 
             return () => clearInterval(interval);
+        } else {
+            setShowDelayedMessage(false);
+            setLoadingStartTime(null);
         }
-    }, [loading]); // SYNTHESIS_STEPS dependency omitted to avoid reset loop, it effectively updates if t changes but loading is typically short.
+    }, [loading]);
 
-    // Initialize from initialAudio prop (Bug 1 Fix)
+    // Show delayed message after 20 seconds
+    useEffect(() => {
+        if (!loading || !loadingStartTime) return;
+        const timer = setTimeout(() => {
+            setShowDelayedMessage(true);
+        }, 20000);
+        return () => clearTimeout(timer);
+    }, [loading, loadingStartTime, synthesisStep]);
+
+    // Initialize from initialAudio prop
     useEffect(() => {
         if (initialAudio) {
             if (typeof initialAudio === 'string' && initialAudio.startsWith('data:audio/')) {
-                // It's base64
                 fetch(initialAudio)
                     .then(res => res.blob())
                     .then(blob => {
@@ -81,7 +101,7 @@ const AudioRecorder = ({ onUploadSuccess, t, languageName, isPro, initialAudio }
                     })
                     .catch(err => {
                         console.error("Failed to restore audio from draft:", err);
-                        setError("Failed to restore audio from draft.");
+                        setError("Could not restore the audio from this draft.");
                     });
             } else if (initialAudio instanceof File || initialAudio instanceof Blob) {
                 if (initialAudio instanceof File) {
@@ -95,7 +115,7 @@ const AudioRecorder = ({ onUploadSuccess, t, languageName, isPro, initialAudio }
         }
     }, [initialAudio]);
 
-    // Dramatic pause for transmute button (700ms delay)
+    // Dramatic pause for transmute button
     useEffect(() => {
         if (audioBlob || file) {
             setShowTransmuteButton(false);
@@ -108,6 +128,74 @@ const AudioRecorder = ({ onUploadSuccess, t, languageName, isPro, initialAudio }
         }
     }, [audioBlob, file]);
 
+    // Audio quality monitoring during recording (Layer 3 - Limitation Transparency)
+    useEffect(() => {
+        if (!isRecording) {
+            setAudioQualityIssue(null);
+            if (qualityCheckRef.current) {
+                cancelAnimationFrame(qualityCheckRef.current);
+                qualityCheckRef.current = null;
+            }
+            if (audioContextRef.current) {
+                audioContextRef.current.close().catch(() => { });
+                audioContextRef.current = null;
+            }
+            return;
+        }
+
+        // Set up audio quality monitoring
+        const monitorQuality = () => {
+            if (!analyserRef.current || !isRecording) return;
+
+            const dataArray = new Uint8Array(analyserRef.current.frequencyBinCount);
+            analyserRef.current.getByteFrequencyData(dataArray);
+
+            // Calculate average volume
+            const avgVolume = dataArray.reduce((sum, v) => sum + v, 0) / dataArray.length;
+
+            // Calculate noise ratio (high frequency energy vs total)
+            const halfLength = Math.floor(dataArray.length / 2);
+            const lowFreqEnergy = dataArray.slice(0, halfLength).reduce((s, v) => s + v, 0);
+            const highFreqEnergy = dataArray.slice(halfLength).reduce((s, v) => s + v, 0);
+            const noiseRatio = highFreqEnergy / (lowFreqEnergy + 1);
+
+            if (avgVolume < 5) {
+                setAudioQualityIssue(t.messages?.audio_quality_noise || "High background noise detected — move to a quieter space for best results.");
+            } else if (noiseRatio > 1.5 && avgVolume > 15) {
+                setAudioQualityIssue(t.messages?.audio_quality_noise || "High background noise detected — move to a quieter space for best results.");
+            } else {
+                setAudioQualityIssue(null);
+            }
+
+            qualityCheckRef.current = requestAnimationFrame(monitorQuality);
+        };
+
+        // Small delay to let MediaRecorder settle
+        const setupTimer = setTimeout(() => {
+            if (mediaRecorderRef.current && mediaRecorderRef.current.stream) {
+                try {
+                    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                    const source = ctx.createMediaStreamSource(mediaRecorderRef.current.stream);
+                    const analyser = ctx.createAnalyser();
+                    analyser.fftSize = 512;
+                    source.connect(analyser);
+                    audioContextRef.current = ctx;
+                    analyserRef.current = analyser;
+                    monitorQuality();
+                } catch (e) {
+                    console.warn("Audio quality monitoring not available:", e);
+                }
+            }
+        }, 500);
+
+        return () => {
+            clearTimeout(setupTimer);
+            if (qualityCheckRef.current) {
+                cancelAnimationFrame(qualityCheckRef.current);
+            }
+        };
+    }, [isRecording]);
+
     const togglePlatform = (platformId) => {
         setSelectedPlatforms(prev =>
             prev.includes(platformId)
@@ -116,7 +204,6 @@ const AudioRecorder = ({ onUploadSuccess, t, languageName, isPro, initialAudio }
         );
     };
 
-    // Format file size for display
     const formatFileSize = (bytes) => {
         if (bytes === 0) return '0 Bytes';
         const k = 1024;
@@ -125,29 +212,22 @@ const AudioRecorder = ({ onUploadSuccess, t, languageName, isPro, initialAudio }
         return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
     };
 
-    // Validate file format and size
     const validateFile = (file) => {
-        // Check file size
         if (file.size > MAX_FILE_SIZE) {
             setError(`File too large. Maximum size is 25MB. Your file is ${formatFileSize(file.size)}.`);
             return false;
         }
-
-        // Check file format
         const fileExtension = file.name.toLowerCase().split('.').pop();
         const validExtensions = ['mp3', 'wav', 'm4a', 'webm', 'ogg'];
         const isValidType = ACCEPTED_FORMATS.some(format => file.type.includes(format.split('/')[1])) ||
             validExtensions.includes(fileExtension);
-
         if (!isValidType) {
-            setError(`Invalid file format. Accepted formats: MP3, WAV, M4A, WebM, OGG`);
+            setError(`Accepted formats: MP3, WAV, M4A, WebM, OGG`);
             return false;
         }
-
         return true;
     };
 
-    // Get audio duration from file
     const getAudioDuration = (file) => {
         return new Promise((resolve) => {
             const audio = new Audio();
@@ -162,81 +242,42 @@ const AudioRecorder = ({ onUploadSuccess, t, languageName, isPro, initialAudio }
         });
     };
 
-    // Process selected file
     const processFile = async (selectedFile) => {
-        if (!validateFile(selectedFile)) {
-            return;
-        }
-
+        if (!validateFile(selectedFile)) return;
         setFile(selectedFile);
         setAudioBlob(null);
         setError(null);
-
-        // Create preview URL
         const url = URL.createObjectURL(selectedFile);
         setFilePreviewUrl(url);
-
-        // Get duration
         const duration = await getAudioDuration(selectedFile);
-        if (duration) {
-            setFileDuration(duration);
-        }
+        if (duration) setFileDuration(duration);
     };
 
-    // Cleanup preview URL when file changes
     useEffect(() => {
         return () => {
-            if (filePreviewUrl) {
-                URL.revokeObjectURL(filePreviewUrl);
-            }
+            if (filePreviewUrl) URL.revokeObjectURL(filePreviewUrl);
         };
     }, [filePreviewUrl]);
 
     const handleFileChange = (e) => {
-        if (e.target.files && e.target.files[0]) {
-            processFile(e.target.files[0]);
-        }
+        if (e.target.files && e.target.files[0]) processFile(e.target.files[0]);
     };
 
-    // Drag & Drop handlers
-    const handleDragOver = (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        setIsDragging(true);
-    };
-
-    const handleDragLeave = (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        setIsDragging(false);
-    };
-
+    const handleDragOver = (e) => { e.preventDefault(); e.stopPropagation(); setIsDragging(true); };
+    const handleDragLeave = (e) => { e.preventDefault(); e.stopPropagation(); setIsDragging(false); };
     const handleDrop = (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        setIsDragging(false);
-
+        e.preventDefault(); e.stopPropagation(); setIsDragging(false);
         const droppedFiles = e.dataTransfer.files;
-        if (droppedFiles && droppedFiles[0]) {
-            processFile(droppedFiles[0]);
-        }
+        if (droppedFiles && droppedFiles[0]) processFile(droppedFiles[0]);
     };
-
-    const onButtonClick = () => {
-        inputRef.current.click();
-    };
+    const onButtonClick = () => inputRef.current.click();
 
     const startRecording = async () => {
-        const usageCount = getUsageCount();
-        const hasReachedLimit = usageCount >= LIMIT && !isProActive;
-
-        if (hasReachedLimit) {
+        if (hasReachedLimit() && !isProActive) {
             setShowPaywall(true);
             return;
         }
-
         setError(null);
-
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
             mediaRecorderRef.current = new MediaRecorder(stream, {
@@ -265,7 +306,7 @@ const AudioRecorder = ({ onUploadSuccess, t, languageName, isPro, initialAudio }
             }, 1000);
 
         } catch (err) {
-            setError(t.messages.mic_error);
+            setError(t.messages?.mic_error || "Microphone access is needed to capture your thoughts.");
         }
     };
 
@@ -290,10 +331,7 @@ const AudioRecorder = ({ onUploadSuccess, t, languageName, isPro, initialAudio }
     };
 
     const handleUpload = async () => {
-        const usageCount = getUsageCount();
-        const hasReachedLimit = usageCount >= LIMIT && !isProActive;
-
-        if (hasReachedLimit) {
+        if (hasReachedLimit() && !isProActive) {
             setShowPaywall(true);
             return;
         }
@@ -301,30 +339,31 @@ const AudioRecorder = ({ onUploadSuccess, t, languageName, isPro, initialAudio }
         const audioData = audioBlob || file;
         if (!audioData || selectedPlatforms.length === 0) return;
 
+        // Edge case: insufficient input (< 10 seconds)
+        const audioDuration = recordingTime || (fileDuration ? Math.round(fileDuration) : 0);
+        if (audioDuration > 0 && audioDuration < 10) {
+            setError(t.messages?.insufficient_input || "Insufficient input. Please record at least 60 seconds of your strategic thinking.");
+            return;
+        }
+
         setLoading(true);
 
         try {
-            // Pass languageName to backend for localized processing
             const response = await transmuteAudio(audioData, languageName);
 
-            // Handle both legacy (string) and new (JSON) formats
             let textValue = "";
             let analysisData = null;
 
             if (response.data && response.data.transcription) {
-                // New JSON format
                 const { transcription, executive_state, core_thesis, strategic_pillars, tactical_steps, industry } = response.data;
 
                 textValue = transcription || "";
                 console.log('✅ Transcription received. Industry:', industry);
 
-                // Calculate Emphasis Audit
-                // Use recordingTime for recordings, fileDuration for uploads, fallback to 60s
                 const durationSeconds = recordingTime || (fileDuration ? Math.round(fileDuration) : 60);
                 const wordCount = textValue.trim().split(/\s+/).length;
                 const wpm = Math.round(wordCount / (durationSeconds / 60));
 
-                // Get high-emphasis signals from transcript
                 const emphasisSignals = extractHighEmphasisSignals(textValue);
 
                 let intensity = "Medium";
@@ -338,6 +377,7 @@ const AudioRecorder = ({ onUploadSuccess, t, languageName, isPro, initialAudio }
                 analysisData = {
                     audit: {
                         duration: formattedDuration,
+                        duration_seconds: durationSeconds,
                         wpm: wpm,
                         intensity: intensity,
                         executive_state: executive_state || "Reflective",
@@ -346,7 +386,6 @@ const AudioRecorder = ({ onUploadSuccess, t, languageName, isPro, initialAudio }
                     industry: industry || "General Business"
                 };
 
-                // Only add content if it was actually returned (e.g. from a legacy flow)
                 if (core_thesis || strategic_pillars || tactical_steps) {
                     analysisData.content = {
                         core_thesis: core_thesis,
@@ -355,23 +394,18 @@ const AudioRecorder = ({ onUploadSuccess, t, languageName, isPro, initialAudio }
                     };
                 }
             } else if (typeof response === 'string') {
-                // Legacy fallback
                 textValue = response;
             } else if (response.text) {
-                // Legacy dict fallback
                 textValue = response.text;
             }
 
-            // Increment usage count AFTER successful generation
             incrementUsageCount();
 
-            // Fire-and-forget: generate AI title and update the most recent draft
             if (textValue) {
                 generateTitle(textValue).then(title => {
                     try {
                         const drafts = JSON.parse(localStorage.getItem('ghostnote_drafts') || '[]');
                         if (drafts.length > 0) {
-                            // Update the most recent draft's title
                             drafts[0].title = title;
                             drafts[0].transcript = textValue;
                             localStorage.setItem('ghostnote_drafts', JSON.stringify(drafts));
@@ -386,7 +420,7 @@ const AudioRecorder = ({ onUploadSuccess, t, languageName, isPro, initialAudio }
             onUploadSuccess(textValue, selectedPlatforms, analysisData);
         } catch (err) {
             console.error(err);
-            setError(err.message || t.messages.transmutation_fail);
+            setError(err.message || t.messages?.transmutation_fail || "The transmuter encountered a temporary issue. Give it another go.");
         } finally {
             setLoading(false);
         }
@@ -394,8 +428,9 @@ const AudioRecorder = ({ onUploadSuccess, t, languageName, isPro, initialAudio }
 
     const hasAudio = file || audioBlob;
 
-    // Show synthesis state when loading
+    // Staged loading experience (Improvement 4)
     if (loading) {
+        const progressPercent = ((synthesisStep + 1) / STAGED_STEPS.length) * 100;
         return (
             <div className="space-y-12 fade-in">
                 <div className="flex flex-col items-center space-y-8">
@@ -404,12 +439,22 @@ const AudioRecorder = ({ onUploadSuccess, t, languageName, isPro, initialAudio }
                         <div className="w-6 h-6 border-2 border-[#A88E65] border-t-transparent rounded-full animate-spin"></div>
                     </div>
 
-                    <div className="text-center space-y-2">
+                    {/* Thin gold progress bar */}
+                    <div className="w-full max-w-xs mx-auto">
+                        <div className="h-0.5 bg-white/10 rounded-full overflow-hidden">
+                            <div
+                                className="h-full bg-[#A88E65] rounded-full transition-all duration-1000 ease-out"
+                                style={{ width: `${progressPercent}%` }}
+                            />
+                        </div>
+                    </div>
+
+                    <div className="text-center space-y-3">
                         <p className="text-[#F9F7F5] text-lg font-light tracking-wide">
-                            {SYNTHESIS_STEPS[synthesisStep]}
+                            {STAGED_STEPS[synthesisStep]}
                         </p>
                         <div className="flex justify-center space-x-1">
-                            {SYNTHESIS_STEPS.map((_, idx) => (
+                            {STAGED_STEPS.map((_, idx) => (
                                 <div
                                     key={idx}
                                     className={`w-2 h-2 rounded-full transition-all ${idx <= synthesisStep ? 'bg-[#A88E65]' : 'bg-gray-600'
@@ -417,6 +462,12 @@ const AudioRecorder = ({ onUploadSuccess, t, languageName, isPro, initialAudio }
                                 />
                             ))}
                         </div>
+                        {/* Delayed message after 20s */}
+                        {showDelayedMessage && (
+                            <p className="text-gray-500 text-xs italic mt-2 animate-pulse">
+                                {t.messages?.stage_delayed || "This is taking a little longer than usual — still working."}
+                            </p>
+                        )}
                     </div>
                 </div>
             </div>
@@ -472,7 +523,7 @@ const AudioRecorder = ({ onUploadSuccess, t, languageName, isPro, initialAudio }
                                         <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm-1 1.93c-3.94-.49-7-3.85-7-7.93h2c0 3.31 2.69 6 6 6s6-2.69 6-6h2c0 4.08-3.06 7.44-7 7.93V20h4v2H8v-2h4v-4.07z" />
                                     </svg>
                                 </button>
-                                {(!isProActive && getUsageCount() >= LIMIT) ? null : (
+                                {(!isProActive && hasReachedLimit()) ? null : (
                                     <p className="text-[#cccccc] text-sm">{t.messages.tap_record}</p>
                                 )}
                             </div>
@@ -488,6 +539,18 @@ const AudioRecorder = ({ onUploadSuccess, t, languageName, isPro, initialAudio }
                                     <p className="text-[#F9F7F5] text-2xl font-light tracking-wider">{formatTime(recordingTime)}</p>
                                     <p className="text-[#999] text-xs">{t.messages.tap_finish}</p>
                                 </div>
+                                {/* Audio Quality Indicator (Layer 3 - Limitation Transparency) */}
+                                {audioQualityIssue && (
+                                    <motion.div
+                                        initial={{ opacity: 0, y: -5 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        exit={{ opacity: 0, y: -5 }}
+                                        className="flex items-center space-x-2 px-4 py-2 rounded-lg bg-[#A88E65]/10 border border-[#A88E65]/20 max-w-sm"
+                                    >
+                                        <span className="w-2 h-2 bg-[#A88E65] rounded-full flex-shrink-0"></span>
+                                        <p className="text-[#A88E65]/80 text-xs font-light">{audioQualityIssue}</p>
+                                    </motion.div>
+                                )}
                             </>
                         ) : audioBlob ? (
                             <div className="text-center space-y-4">
@@ -572,7 +635,6 @@ const AudioRecorder = ({ onUploadSuccess, t, languageName, isPro, initialAudio }
                                     </button>
                                 </div>
 
-                                {/* Audio preview player */}
                                 <audio
                                     controls
                                     src={filePreviewUrl}
@@ -585,7 +647,9 @@ const AudioRecorder = ({ onUploadSuccess, t, languageName, isPro, initialAudio }
                 )}
             </div>
 
-            {error && <p className="text-center text-red-600 text-sm">{error}</p>}
+            {error && (
+                <p className="text-center text-[#A88E65] text-sm italic">{error}</p>
+            )}
 
             {hasAudio && (
                 <div className={`flex flex-col items-center pt-8 space-y-4 transition-all duration-700 ${showTransmuteButton ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
@@ -609,7 +673,6 @@ const AudioRecorder = ({ onUploadSuccess, t, languageName, isPro, initialAudio }
 
                             const save = async () => {
                                 try {
-                                    // Convert audio to base64 for storage
                                     const audioBase64 = await new Promise((resolve) => {
                                         const reader = new FileReader();
                                         reader.onloadend = () => resolve(reader.result);
@@ -622,7 +685,7 @@ const AudioRecorder = ({ onUploadSuccess, t, languageName, isPro, initialAudio }
                                         transcript: RAW_DRAFT_PLACEHOLDER,
                                         tag: t.labels.brain_dump,
                                         created_at: new Date().toISOString(),
-                                        audioData: audioBase64 // Persist audio!
+                                        audioData: audioBase64
                                     };
 
                                     const existing = JSON.parse(localStorage.getItem('ghostnote_drafts') || '[]');
@@ -635,7 +698,7 @@ const AudioRecorder = ({ onUploadSuccess, t, languageName, isPro, initialAudio }
                                     alert(t.messages.draft_saved);
                                 } catch (err) {
                                     console.error(err);
-                                    setError('Failed to save draft locally.');
+                                    setError('Draft could not be saved at this time.');
                                 } finally {
                                     setSavingDraft(false);
                                 }
