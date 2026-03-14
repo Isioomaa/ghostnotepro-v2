@@ -126,9 +126,23 @@ const SynthesisResult = ({ text, analysis, languageName, currentLang, t, onReset
     const [isEditingOutput, setIsEditingOutput] = useState(false);
     const [editedData, setEditedData] = useState(null);
     const [originalData, setOriginalData] = useState(null);
+    
+    // Structure Selection (Feature 2)
+    const [structureMode, setStructureMode] = useState('Detailed'); // 'Brief' or 'Detailed'
+
+    // Executive State Override (Feature 1)
+    const [selectedExecutiveState, setSelectedExecutiveState] = useState(null);
+    const [isEditingExecutiveState, setIsEditingExecutiveState] = useState(false);
+    const [isExecutiveStateOverridden, setIsExecutiveStateOverridden] = useState(false);
 
     // Default translation fallback
     const localT = t || TRANSLATIONS.EN;
+
+    useEffect(() => {
+        if (analysis && analysis.executive_state && !selectedExecutiveState && !isExecutiveStateOverridden) {
+            setSelectedExecutiveState(analysis.executive_state || analysis.tone || "Reflective");
+        }
+    }, [analysis]);
 
     // Initialize with initialData if provided
     useEffect(() => {
@@ -187,7 +201,7 @@ const SynthesisResult = ({ text, analysis, languageName, currentLang, t, onReset
             console.log('🚀 Starting generation. isPro:', isPro);
             console.log('--- Industry Context:', industry);
 
-            const scribePromise = generateExecutiveSuite(editableText, analysis, languageName, 'scribe', isPro, industry, analysis?.emphasis_signals);
+            const scribePromise = generateExecutiveSuite(editableText, analysis, languageName, 'scribe', isPro, industry, analysis?.emphasis_signals, selectedExecutiveState, structureMode);
 
             if (isPro) {
                 console.log('💎 Pro user detected. Triggering Strategist...');
@@ -196,7 +210,7 @@ const SynthesisResult = ({ text, analysis, languageName, currentLang, t, onReset
             }
 
             const strategistPromise = isPro
-                ? generateExecutiveSuite(editableText, analysis, languageName, 'strategist', isPro, industry, analysis?.emphasis_signals)
+                ? generateExecutiveSuite(editableText, analysis, languageName, 'strategist', isPro, industry, analysis?.emphasis_signals, selectedExecutiveState, structureMode)
                 : Promise.resolve({});
 
             const results = await Promise.allSettled([scribePromise, strategistPromise]);
@@ -461,9 +475,43 @@ const SynthesisResult = ({ text, analysis, languageName, currentLang, t, onReset
                             </div>
                             <div className="pt-2 md:pt-0">
                                 <p className="text-[10px] uppercase tracking-widest text-gray-500 mb-1">{localT.labels?.executive_state || "STATE"}</p>
-                                <p className="font-serif italic text-base md:text-lg text-tactical-amber">
-                                    {analysis.executive_state || analysis.tone || "Reflective"}
-                                </p>
+                                <div className="flex flex-col items-center justify-center relative">
+                                    {isEditingExecutiveState ? (
+                                        <div className="flex space-x-2 mt-1 z-10">
+                                            {['Reflective', 'Analytical', 'Decisive'].map(state => (
+                                                <button
+                                                    key={state}
+                                                    onClick={() => {
+                                                        setSelectedExecutiveState(state);
+                                                        setIsExecutiveStateOverridden(true);
+                                                        setIsEditingExecutiveState(false);
+                                                    }}
+                                                    className={`px-3 py-1 bg-white/5 border ${selectedExecutiveState === state ? 'border-tactical-amber text-tactical-amber' : 'border-white/10 text-white hover:border-white/30'} rounded-full text-[10px] font-medium uppercase tracking-wider transition-colors`}
+                                                >
+                                                    {state}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <div className="flex items-center space-x-2">
+                                            <p className="font-serif italic text-base md:text-lg text-tactical-amber">
+                                                {selectedExecutiveState || analysis.executive_state || analysis.tone || "Reflective"}
+                                            </p>
+                                            <button 
+                                                onClick={() => setIsEditingExecutiveState(true)}
+                                                className="text-gray-500 hover:text-tactical-amber transition-colors outline-none focus:outline-none ml-1"
+                                                aria-label="Edit Executive State"
+                                            >
+                                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    )}
+                                    {isExecutiveStateOverridden && !isEditingExecutiveState && (
+                                        <p className="text-[9px] italic text-gray-500 mt-1">Adjusted before generation</p>
+                                    )}
+                                </div>
                             </div>
                         </div>
 
@@ -487,6 +535,32 @@ const SynthesisResult = ({ text, analysis, languageName, currentLang, t, onReset
                                 </div>
                             </div>
                         )}
+                    </div>
+                )}
+
+                {/* Document Structure Selection */}
+                {!isEditing && analysis && (
+                    <div className="max-w-xs mx-auto mb-8 animate-in fade-in">
+                        <div className="flex justify-center space-x-6 border-b border-white/10 pb-2">
+                            <button
+                                onClick={() => setStructureMode('Brief')}
+                                className={`text-[11px] uppercase tracking-widest font-bold pb-2 relative transition-colors ${structureMode === 'Brief' ? 'text-gold-600' : 'text-gray-500 hover:text-gray-300'}`}
+                            >
+                                Brief
+                                {structureMode === 'Brief' && (
+                                    <span className="absolute bottom-[-2px] left-0 w-full h-[2px] bg-gold-600"></span>
+                                )}
+                            </button>
+                            <button
+                                onClick={() => setStructureMode('Detailed')}
+                                className={`text-[11px] uppercase tracking-widest font-bold pb-2 relative transition-colors ${structureMode === 'Detailed' ? 'text-gold-600' : 'text-gray-500 hover:text-gray-300'}`}
+                            >
+                                Detailed
+                                {structureMode === 'Detailed' && (
+                                    <span className="absolute bottom-[-2px] left-0 w-full h-[2px] bg-gold-600"></span>
+                                )}
+                            </button>
+                        </div>
                     </div>
                 )}
 

@@ -91,6 +91,8 @@ class GenerateRequest(BaseModel):
     isPro: bool = False
     industry: str = None
     emphasis_signals: List[str] = []
+    executive_state: str = None
+    structure_mode: Literal["Detailed", "Brief"] = "Detailed"
 
 class TitleRequest(BaseModel):
     transcript: str
@@ -277,10 +279,34 @@ async def generate_post_handler(request: GenerateRequest):
             signals_str = ", ".join(request.emphasis_signals)
             emphasis_context = f"\nCRITICAL: The following concepts were identified as HIGH EMPHASIS in the user's voice note: {signals_str}. Ensure these themes are core to your analysis and the resulting output reflects their importance.\n"
 
+        executive_state_context = ""
+        if request.executive_state:
+            executive_state_context = f"\nCRITICAL: The user has selected the following Executive State for this generation: {request.executive_state}. You MUST adapt the tone, framing, and delivery format of the output to align perfectly with a {request.executive_state} disposition.\n"
+
+        structure_instruction = ""
+        json_structure = ""
+        
         if request.mode == "scribe":
+            if request.structure_mode == "Brief":
+                structure_instruction = "You must provide a BRIEF output. Omit any tactical steps or operational details."
+                json_structure = """
+            Return ONLY a JSON object (no markdown, no code blocks) with:
+            - core_thesis: 30-60 word strategic thesis statement
+            - strategic_pillars: array of objects with "title" and "description" (1-2 sentences of COS analysis)
+                """
+            else:
+                structure_instruction = "You must provide a DETAILED output including tactical steps."
+                json_structure = """
+            Return ONLY a JSON object (no markdown, no code blocks) with:
+            - core_thesis: 30-60 word strategic thesis statement
+            - strategic_pillars: array of objects with "title" and "description" (1-2 sentences of COS analysis)
+            - tactical_steps: array of actionable strings
+                """
+            
             prompt = f"""
             {industry_context}
             {emphasis_context}
+            {executive_state_context}
             You are a Pulitzer Prize-winning journalist and presidential speechwriter combined. Transform chaotic voice notes into Wall Street Journal-caliber prose with the gravitas of State of the Union addresses. 
 
             Your output must have:
@@ -293,15 +319,29 @@ async def generate_post_handler(request: GenerateRequest):
             
             Text: {request.text}
             
-            Return ONLY a JSON object (no markdown, no code blocks) with:
-            - core_thesis: 30-60 word strategic thesis statement
-            - strategic_pillars: array of objects with "title" and "description" (1-2 sentences of COS analysis)
-            - tactical_steps: array of actionable strings
+            {structure_instruction}
+            {json_structure}
             """
         else: # strategist
+            if request.structure_mode == "Brief":
+                structure_instruction = "You must provide a BRIEF output. Omit any risk audits or email drafts."
+                json_structure = """
+            Return ONLY a JSON object (no markdown, no code blocks) with:
+            - judgment: 150-250 words of deep strategic judgment
+                """
+            else:
+                structure_instruction = "You must provide a DETAILED output including risk audits and email drafts."
+                json_structure = """
+            Return ONLY a JSON object (no markdown, no code blocks) with:
+            - judgment: 150-250 words of deep strategic judgment
+            - riskAudit: 150-250 words of risk analysis
+            - emailDraft: A ready-to-send draft starting with 'SUBJECT: '
+                """
+                
             prompt = f"""
             {industry_context}
             {emphasis_context}
+            {executive_state_context}
             You are an acclaimed White House Chief of Staff - the highest level executive advisor. You possess:
             - Supreme intelligence across all subjects (geopolitics, economics, technology, culture, strategy)
             - Razor-sharp judgment and risk assessment capabilities
@@ -312,10 +352,8 @@ async def generate_post_handler(request: GenerateRequest):
             
             Text: {request.text}
             
-            Return ONLY a JSON object (no markdown, no code blocks) with:
-            - judgment: 150-250 words of deep strategic judgment
-            - riskAudit: 150-250 words of risk analysis
-            - emailDraft: A ready-to-send draft starting with 'SUBJECT: '
+            {structure_instruction}
+            {json_structure}
             """
         
         logger.info(f"Triggering Claude for mode: {request.mode}")

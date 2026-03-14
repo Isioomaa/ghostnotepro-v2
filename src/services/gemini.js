@@ -63,7 +63,7 @@ export const generateTitle = async (transcript) => {
     }
 };
 
-export const generateExecutiveSuite = async (text, analysis, language, mode = 'scribe', isPro = false, industry = null, emphasis_signals = []) => {
+export const generateExecutiveSuite = async (text, analysis, language, mode = 'scribe', isPro = false, industry = null, emphasis_signals = [], executive_state = null, structure_mode = "Detailed") => {
     // Note: analysis, language might be unused in backend but keeping signature compatible if needed, 
     // or we can clean up. The backend only uses `text`, `mode`, `isPro`.
 
@@ -78,7 +78,9 @@ export const generateExecutiveSuite = async (text, analysis, language, mode = 's
                 mode,
                 isPro,
                 industry,
-                emphasis_signals
+                emphasis_signals,
+                executive_state,
+                structure_mode
             })
         });
 
