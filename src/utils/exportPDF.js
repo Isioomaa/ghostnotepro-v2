@@ -60,7 +60,7 @@ export function exportToPDF(data, mode = 'scribe', options = {}) {
         if (proData.judgment || proData.executive_judgement) {
             contentHTML += `
                 <div class="section">
-                    <h2 class="section-label">EXECUTIVE JUDGMENT</h2>
+                    <h2 class="section-label">EXECUTIVE JUDGEMENT</h2>
                     <p class="judgment">${formatMarkdown(proData.judgment || proData.executive_judgement)}</p>
                 </div>
             `;

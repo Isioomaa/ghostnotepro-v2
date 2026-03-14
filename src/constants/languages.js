@@ -70,16 +70,16 @@ export const TRANSLATIONS = {
         },
         strategist: {
             title: "THE STRATEGIST",
-            description: "AI Chief of Staff intelligence. Judgment. Risk Audits. Execution-ready emails.",
-            judgment: "EXECUTIVE JUDGMENT",
+            description: "AI Chief of Staff intelligence. Judgement. Risk Audits. Execution-ready emails.",
+            judgment: "EXECUTIVE JUDGEMENT",
             risk_audit: "RISK AUDIT",
             email_draft: "EMAIL DRAFT",
             unlock_title: "Unlock The Strategist",
-            unlock_desc: "The Strategist is your dedicated Chief of Staff suite. Upgrade to Pro to access Executive Judgment, Risk Audits, and ready-to-send Emails.",
+            unlock_desc: "The Strategist is your dedicated Chief of Staff suite. Upgrade to Pro to access Executive Judgement, Risk Audits, and ready-to-send Emails.",
             operationalize: "OPERATIONALIZE THIS STRATEGY",
             specializing_in: "Specializing in",
             record_longer_emphasis: "Record longer for deeper emphasis analysis.",
-            no_judgment: "No judgment available",
+            no_judgment: "No judgement available",
             no_risk_audit: "No risk audit available",
             email_draft_desc: "Review the persuasively drafted communication for your stakeholders."
         },
@@ -169,16 +169,16 @@ export const TRANSLATIONS = {
             publish_web: "Publish to Web"
         },
         wager: {
-            lock_title: "Judgment Lock",
-            lock_desc: "Don't just hope. Predict. Lock this decision into 'History' to test your judgment accuracy later.",
+            lock_title: "Judgement Lock",
+            lock_desc: "Don't just hope. Predict. Lock this decision into 'History' to test your judgement accuracy later.",
             seal_btn: "Seal Time Capsule",
             prediction_lbl: "The Prediction",
             prediction_placeholder: "What is the expected outcome in reality?",
             timeline_lbl: "Audit Timeline",
-            confirm_btn: "Confirm Judgment Lock",
+            confirm_btn: "Confirm Judgement Lock",
             cancel_btn: "Cancel",
             sealing: "Sealing...",
-            success: "Time Capsule Sealed. Judgment locked.",
+            success: "Time Capsule Sealed. Judgement locked.",
             fail: "Failed to seal time capsule."
         },
         drafts_view: {
@@ -188,7 +188,7 @@ export const TRANSLATIONS = {
         },
         history_view: {
             title: "History",
-            subtitle: "Judgment Variance Engine",
+            subtitle: "Judgement Variance Engine",
             no_wagers: "NO WAGERS FOUND",
             quote: "\"The unexamined decision is not worth making.\"",
             avg_accuracy: "Avg Accuracy",
@@ -199,11 +199,11 @@ export const TRANSLATIONS = {
             reckoning_desc: "Record what actually happened. Gemini will calculate the variance.",
             record_update: "Record Update",
             update_captured: "Update Captured.",
-            seal_judgment: "Seal Judgment",
+            seal_judgment: "Seal Judgement",
             running: "Running Variance Engine...",
             discard: "Discard and Re-record",
             return: "Return to History",
-            accuracy_score: "Judgment Accuracy Score",
+            accuracy_score: "Judgement Accuracy Score",
             share: "Share"
         },
         brief_view: {
@@ -244,7 +244,7 @@ export const TRANSLATIONS = {
             limit_desc: "You have used your 3 daily transmutations. Your limit resets in 24 hours. Upgrade to Pro for unlimited access and The Strategist suite.",
             pro_features: "With GhostNote Pro, you unlock:",
             feature_unlimited: "Unlimited Scribe transmutations — no daily cap",
-            feature_intelligence: "The Strategist suite — Judgment, Risk Audits, Execution Emails",
+            feature_intelligence: "The Strategist suite — Judgement, Risk Audits, Execution Emails",
             feature_priority: "Priority processing for faster results",
             feature_storage: "Extended archive and export capabilities",
             view_plans: "Explore membership",

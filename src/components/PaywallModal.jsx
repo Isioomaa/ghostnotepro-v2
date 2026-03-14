@@ -63,7 +63,7 @@ const PaywallModal = ({ onClose, scenario = 'upsell', t }) => {
                                     <span className="text-[#a88e65] mr-2">✓</span> {localT.paywall?.feature_unlimited || "Unlimited Scribe transmutations — no daily cap"}
                                 </li>
                                 <li className="flex items-start">
-                                    <span className="text-[#a88e65] mr-2">✓</span> {localT.paywall?.feature_intelligence || "The Strategist suite — Judgment, Risk Audits, Execution Emails"}
+                                    <span className="text-[#a88e65] mr-2">✓</span> {localT.paywall?.feature_intelligence || "The Strategist suite — Judgement, Risk Audits, Execution Emails"}
                                 </li>
                                 <li className="flex items-start">
                                     <span className="text-[#a88e65] mr-2">✓</span> {localT.paywall?.feature_priority || "Priority processing for faster results"}

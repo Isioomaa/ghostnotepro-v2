@@ -35,6 +35,9 @@ const AudioRecorder = ({ onUploadSuccess, t, languageName, isPro, initialAudio }
     const [showDelayedMessage, setShowDelayedMessage] = useState(false);
     // Audio quality indicator (Layer 3 - Transparency)
     const [audioQualityIssue, setAudioQualityIssue] = useState(null);
+    // Short Recording Intercept (Feature 1)
+    const [showShortIntercept, setShowShortIntercept] = useState(false);
+    const [shortInterceptAccepted, setShortInterceptAccepted] = useState(false);
 
     const inputRef = useRef(null);
     const mediaRecorderRef = useRef(null);
@@ -247,6 +250,8 @@ const AudioRecorder = ({ onUploadSuccess, t, languageName, isPro, initialAudio }
         setFile(selectedFile);
         setAudioBlob(null);
         setError(null);
+        setShowShortIntercept(false);
+        setShortInterceptAccepted(false);
         const url = URL.createObjectURL(selectedFile);
         setFilePreviewUrl(url);
         const duration = await getAudioDuration(selectedFile);
@@ -278,6 +283,8 @@ const AudioRecorder = ({ onUploadSuccess, t, languageName, isPro, initialAudio }
             return;
         }
         setError(null);
+        setShowShortIntercept(false);
+        setShortInterceptAccepted(false);
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
             mediaRecorderRef.current = new MediaRecorder(stream, {
@@ -322,6 +329,8 @@ const AudioRecorder = ({ onUploadSuccess, t, languageName, isPro, initialAudio }
         setAudioBlob(null);
         setRecordingTime(0);
         setError(null);
+        setShowShortIntercept(false);
+        setShortInterceptAccepted(false);
     };
 
     const formatTime = (seconds) => {
@@ -339,10 +348,11 @@ const AudioRecorder = ({ onUploadSuccess, t, languageName, isPro, initialAudio }
         const audioData = audioBlob || file;
         if (!audioData || selectedPlatforms.length === 0) return;
 
-        // Edge case: insufficient input (< 10 seconds)
         const audioDuration = recordingTime || (fileDuration ? Math.round(fileDuration) : 0);
-        if (audioDuration > 0 && audioDuration < 10) {
-            setError(t.messages?.insufficient_input || "Insufficient input. Please record at least 60 seconds of your strategic thinking.");
+        
+        // Feature 1: Short Recording Intercept (< 20 seconds)
+        if (audioDuration > 0 && audioDuration < 20 && !shortInterceptAccepted) {
+            setShowShortIntercept(true);
             return;
         }
 
@@ -511,7 +521,32 @@ const AudioRecorder = ({ onUploadSuccess, t, languageName, isPro, initialAudio }
             </div>
 
             <div className="flex flex-col items-center">
-                {mode === 'record' ? (
+                {showShortIntercept ? (
+                    <div className="flex flex-col items-center text-center space-y-8 animate-in fade-in duration-500 max-w-md mx-auto py-12">
+                        <p className="text-white text-lg font-light tracking-wide">
+                            Short recordings may produce limited output — continue or re-record.
+                        </p>
+                        <div className="flex space-x-4">
+                            <button
+                                onClick={() => {
+                                    setShortInterceptAccepted(true);
+                                    setTimeout(() => handleUpload(), 0);
+                                }}
+                                className="px-8 py-3 border border-[#A88E65] text-[#A88E65] rounded text-[10px] font-bold uppercase tracking-widest hover:bg-[#A88E65] hover:text-black transition-all"
+                            >
+                                Continue
+                            </button>
+                            <button
+                                onClick={() => {
+                                    discardRecording();
+                                }}
+                                className="px-8 py-3 border border-gray-600 text-gray-400 rounded text-[10px] font-bold uppercase tracking-widest hover:text-white hover:border-gray-400 transition-all"
+                            >
+                                Re-record
+                            </button>
+                        </div>
+                    </div>
+                ) : mode === 'record' ? (
                     <div className="flex flex-col items-center space-y-8">
                         {!isRecording && !audioBlob ? (
                             <div className="flex flex-col items-center space-y-4">
@@ -651,7 +686,7 @@ const AudioRecorder = ({ onUploadSuccess, t, languageName, isPro, initialAudio }
                 <p className="text-center text-[#A88E65] text-sm italic">{error}</p>
             )}
 
-            {hasAudio && (
+            {hasAudio && !showShortIntercept && (
                 <div className={`flex flex-col items-center pt-8 space-y-4 transition-all duration-700 ${showTransmuteButton ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
                     }`}>
                     <motion.button

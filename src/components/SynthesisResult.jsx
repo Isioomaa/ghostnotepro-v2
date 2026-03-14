@@ -49,11 +49,59 @@ const TransparencyLabel = ({ type, t }) => {
                 {label}
             </span>
             {showTooltip && (
-                <span className="absolute bottom-full left-0 mb-2 px-3 py-2 bg-gray-800 text-gray-300 text-[10px] rounded shadow-lg whitespace-nowrap z-50 border border-gray-700">
+                <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 p-3 bg-gray-800 text-gray-300 text-[10px] leading-relaxed rounded shadow-xl z-50 border border-gray-700 w-max max-w-[240px] text-center whitespace-normal break-words">
                     {tooltip}
                 </span>
             )}
         </span>
+    );
+};
+// Section-Level Flag Mechanism Component (Feature 2)
+const FlagButton = ({ sectionName, outputType }) => {
+    const [isFlagged, setIsFlagged] = useState(false);
+
+    const handleFlag = (e) => {
+        e.stopPropagation();
+        if (isFlagged) return;
+        
+        setIsFlagged(true);
+        
+        const flagData = {
+            id: Date.now(),
+            sectionName,
+            outputType,
+            timestamp: new Date().toISOString()
+        };
+        try {
+            const flags = JSON.parse(localStorage.getItem('ghostnote_flags') || '[]');
+            flags.push(flagData);
+            localStorage.setItem('ghostnote_flags', JSON.stringify(flags));
+        } catch (err) {
+            console.error('Failed to log flag data silently', err);
+        }
+    };
+
+    return (
+        <button 
+            onClick={handleFlag}
+            className={`flex items-center space-x-2 transition-all group ${isFlagged ? 'cursor-default' : 'cursor-pointer hover:opacity-80'}`}
+        >
+            {isFlagged && (
+                <span className="text-[9px] text-gray-500 italic animate-in fade-in duration-300 whitespace-nowrap">
+                    Noted. This helps us improve.
+                </span>
+            )}
+            <svg 
+                className={`w-3 h-3 md:w-[14px] md:h-[14px] transition-colors flex-shrink-0 ${isFlagged ? 'text-gray-400 fill-current' : 'text-gray-500 fill-transparent stroke-current hover:text-gray-400'}`} 
+                viewBox="0 0 24 24" 
+                strokeWidth="2" 
+                strokeLinecap="round" 
+                strokeLinejoin="round"
+            >
+                <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" />
+                <line x1="4" y1="22" x2="4" y2="15" />
+            </svg>
+        </button>
     );
 };
 
@@ -511,7 +559,10 @@ const SynthesisResult = ({ text, analysis, languageName, currentLang, t, onReset
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ duration: 0.5, delay: 0 }}
                         >
-                            <h4 className="font-sans font-bold uppercase tracking-widest text-sm md:text-xs text-gold-600 mb-4 md:mb-6">{localT.scribe?.core_thesis || "CORE THESIS"}</h4>
+                            <div className="flex justify-between items-start mb-4 md:mb-6">
+                                <h4 className="font-sans font-bold uppercase tracking-widest text-sm md:text-xs text-gold-600">{localT.scribe?.core_thesis || "CORE THESIS"}</h4>
+                                <FlagButton sectionName="Core Thesis" outputType="Scribe" />
+                            </div>
                             {isEditingOutput ? (
                                 <div
                                     contentEditable
@@ -538,7 +589,10 @@ const SynthesisResult = ({ text, analysis, languageName, currentLang, t, onReset
                             <h4 className="font-sans font-bold uppercase tracking-widest text-sm md:text-xs text-gold-600 mb-4 md:mb-6">{localT.scribe?.strategic_pillars || "STRATEGIC PILLARS"}</h4>
                             <div className="space-y-8 md:space-y-12">
                                 {freeData.strategic_pillars.map((pillar, idx) => (
-                                    <div key={idx} className="border-l-2 border-gold-600/20 pl-6 md:pl-8 py-2">
+                                    <div key={idx} className="border-l-2 border-gold-600/20 pl-6 md:pl-8 py-2 relative">
+                                        <div className="absolute top-2 right-0">
+                                            <FlagButton sectionName={`Strategic Pillar: ${pillar.title}`} outputType="Scribe" />
+                                        </div>
                                         {isEditingOutput ? (
                                             <>
                                                 <div
@@ -585,7 +639,7 @@ const SynthesisResult = ({ text, analysis, languageName, currentLang, t, onReset
                             <h4 className="font-sans font-bold uppercase tracking-widest text-sm md:text-xs text-gold-600 mb-4 md:mb-6">{localT.scribe?.tactical_steps || "TACTICAL STEPS"}</h4>
                             <ul className="space-y-3 md:space-y-4">
                                 {freeData.tactical_steps.map((step, idx) => (
-                                    <li key={idx} className="flex items-start text-gray-900 text-sm font-sans group">
+                                <li key={idx} className="flex items-start text-gray-900 text-sm font-sans group relative">
                                         <span className="mr-3 md:mr-4 w-6 h-6 rounded-full bg-gold-600/5 flex items-center justify-center text-gold-600 text-[10px] font-bold border border-gold-600/10 group-hover:bg-gold-600 group-hover:text-white transition-all flex-shrink-0">
                                             {idx + 1}
                                         </span>
@@ -594,13 +648,16 @@ const SynthesisResult = ({ text, analysis, languageName, currentLang, t, onReset
                                                 contentEditable
                                                 suppressContentEditableWarning
                                                 onBlur={(e) => updateEditedField(`tactical_steps.${idx}`, e.target.textContent)}
-                                                className="flex-1 pt-0.5 font-serif text-base border border-dashed border-gray-300/50 p-2 rounded focus:outline-none focus:border-gold-600"
+                                                className="flex-1 pt-0.5 font-serif text-base border border-dashed border-gray-300/50 p-2 rounded focus:outline-none focus:border-gold-600 pr-8"
                                             >
                                                 {(currentEditData?.tactical_steps?.[idx] || step)}
                                             </div>
                                         ) : (
-                                            <span className="flex-1 pt-0.5 font-serif text-base">{step}</span>
+                                            <span className="flex-1 pt-0.5 font-serif text-base pr-8">{step}</span>
                                         )}
+                                        <div className="absolute top-1 right-0">
+                                            <FlagButton sectionName={`Tactical Step ${idx + 1}`} outputType="Scribe" />
+                                        </div>
                                     </li>
                                 ))}
                             </ul>
@@ -620,7 +677,7 @@ const SynthesisResult = ({ text, analysis, languageName, currentLang, t, onReset
                             </div>
                             <h3 className="font-playfair font-bold text-2xl text-white mb-4">{localT.strategist?.unlock_title || "Unlock The Strategist"}</h3>
                             <p className="text-gray-300 text-sm max-w-xs mb-8 leading-relaxed font-sans">
-                                {localT.strategist?.unlock_desc || "The Strategist is your dedicated Chief of Staff suite. Upgrade to Pro to access Executive Judgment, Risk Audits, and ready-to-send Emails."}
+                                {localT.strategist?.unlock_desc || "The Strategist is your dedicated Chief of Staff suite. Upgrade to Pro to access Executive Judgement, Risk Audits, and ready-to-send Emails."}
                             </p>
                             <motion.button
                                 onClick={() => setShowPaywall(true)}
@@ -647,12 +704,15 @@ const SynthesisResult = ({ text, analysis, languageName, currentLang, t, onReset
                                         transition={{ duration: 0.5, delay: 0.15 }}
                                         className="dossier-card p-5 md:p-6"
                                     >
-                                        <div className="flex items-center space-x-2 mb-4 md:mb-6">
-                                            <span className="pulse-dot"></span>
-                                            <h4 className="font-sans font-bold uppercase tracking-widest text-sm md:text-xs text-tactical-amber">
-                                                {localT.strategist?.judgment || "EXECUTIVE JUDGMENT"}
-                                                <TransparencyLabel type="implication" t={localT} />
-                                            </h4>
+                                        <div className="flex justify-between items-start mb-4 md:mb-6">
+                                            <div className="flex items-center space-x-2">
+                                                <span className="pulse-dot"></span>
+                                                <h4 className="font-sans font-bold uppercase tracking-widest text-sm md:text-xs text-tactical-amber">
+                                                    {localT.strategist?.judgment || "EXECUTIVE JUDGEMENT"}
+                                                    <TransparencyLabel type="implication" t={localT} />
+                                                </h4>
+                                            </div>
+                                            <FlagButton sectionName="Executive Judgement" outputType="Strategist" />
                                         </div>
                                         {isEditingOutput ? (
                                             <div
@@ -678,9 +738,12 @@ const SynthesisResult = ({ text, analysis, languageName, currentLang, t, onReset
                                         transition={{ duration: 0.5, delay: 0.2 }}
                                         className="dossier-card p-5 md:p-6"
                                     >
-                                        <div className="flex items-center space-x-2 mb-4 md:mb-6">
-                                            <span className="pulse-dot"></span>
-                                            <h4 className="font-sans font-bold uppercase tracking-widest text-sm md:text-xs text-red-400">{localT.strategist?.risk_audit || "RISK AUDIT"}</h4>
+                                        <div className="flex justify-between items-start mb-4 md:mb-6">
+                                            <div className="flex items-center space-x-2">
+                                                <span className="pulse-dot"></span>
+                                                <h4 className="font-sans font-bold uppercase tracking-widest text-sm md:text-xs text-red-400">{localT.strategist?.risk_audit || "RISK AUDIT"}</h4>
+                                            </div>
+                                            <FlagButton sectionName="Risk Audit" outputType="Strategist" />
                                         </div>
                                         {isEditingOutput ? (
                                             <div
@@ -751,7 +814,8 @@ const SynthesisResult = ({ text, analysis, languageName, currentLang, t, onReset
                                                     <>
                                                         <div className="flex flex-col md:flex-row justify-between items-start md:items-baseline mb-6 border-b border-white/5 pb-4 gap-4 md:gap-0">
                                                             <h5 className="font-sans font-bold text-white text-[10px] uppercase tracking-widest">{localT.strategist?.email_draft || "EMAIL DRAFT"}</h5>
-                                                            <div className="flex space-x-4 w-full md:w-auto justify-between md:justify-end">
+                                                            <div className="flex space-x-4 w-full md:w-auto justify-between md:justify-end items-center">
+                                                                <FlagButton sectionName="Email Draft" outputType="Strategist" />
                                                                 <button
                                                                     onClick={() => copyToClipboard(body, localT.strategist?.email_draft || "Email")}
                                                                     className="text-xs md:text-[10px] text-tactical-amber hover:text-white uppercase tracking-widest"
