@@ -2,13 +2,12 @@ import React, { useState } from 'react';
 import { FaLinkedin, FaXTwitter, FaWhatsapp, FaRegCopy, FaGlobe } from 'react-icons/fa6';
 import axios from 'axios';
 
-const ShareActions = ({ sessionId, textToShare, analysisResult, isPro, onPaywallTrigger, onShowToast, url = "https://www.ghostnotepro.com", t }) => {
+const ShareActions = ({ textToShare, analysisResult, isPro, onPaywallTrigger, onShowToast, url = "https://www.ghostnotepro.com", t }) => {
     const [sharing, setSharing] = useState(false);
     const [copied, setCopied] = useState(false);
-    const [isPublishing, setIsPublishing] = useState(false);
 
     // Default to EN if t is missing
-    const localT = t || { buttons: { copy: "COPY", share: "SHARE" }, labels: { archive_share: "Publish to Web" } };
+    const localT = t || { buttons: { copy: "COPY", share: "SHARE" }, labels: { archive_share: "Archive" } };
 
     const handleCopy = async (text, showToast = true) => {
         try {
@@ -21,33 +20,6 @@ const ShareActions = ({ sessionId, textToShare, analysisResult, isPro, onPaywall
         } catch (err) {
             console.error('Failed to copy:', err);
             return false;
-        }
-    };
-
-    const handlePublish = async () => {
-        if (!sessionId) return;
-        setIsPublishing(true);
-        try {
-            const response = await axios.post(`/api/publish/${sessionId}`, {
-                content: analysisResult,
-                language: t?.code || 'EN',
-                timestamp: new Date().toISOString(),
-                industry: analysisResult?.industry
-            });
-            const { publicUrl } = response.data;
-            const fullUrl = `${window.location.origin}${publicUrl}`;
-
-            await navigator.clipboard.writeText(fullUrl);
-            if (onShowToast) {
-                onShowToast(localT.messages?.copy_success || "Link copied!");
-            }
-        } catch (err) {
-            console.error("Publish failed", err);
-            if (onShowToast) {
-                onShowToast(localT.messages?.publish_fail || "Failed to publish.");
-            }
-        } finally {
-            setIsPublishing(false);
         }
     };
 
@@ -119,22 +91,9 @@ const ShareActions = ({ sessionId, textToShare, analysisResult, isPro, onPaywall
                     <span>{copied ? '✓' : localT.buttons.copy}</span>
                 </button>
             </div>
-
-            {/* Publish TO Web - Button Hidden if no session ID or redundant with Museum Mode logic, 
-                BUT keeping it as per existing code structure, just localized. 
-                Using "t.labels.archive_share" which describes intent well.
-            */}
-            <button
-                onClick={handlePublish}
-                disabled={isPublishing || !sessionId}
-                className="flex items-center space-x-3 bg-white/5 border border-white/10 hover:bg-white/10 px-8 py-3 rounded-full transition-all group active:scale-95 disabled:opacity-50"
-            >
-                <FaGlobe className={`text-[#A88E65] ${isPublishing ? 'animate-spin' : 'group-hover:rotate-12 transition-transform'}`} />
-                <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#cccccc]">
-                    {isPublishing ? '...' : (localT.labels?.publish_web || "Publish to Web")}
-                </span>
-            </button>
         </div>
+    );
+};
     );
 };
 

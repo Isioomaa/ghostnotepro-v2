@@ -124,7 +124,6 @@ const FlagButton = ({ sectionName, outputType }) => {
 
 const SynthesisResult = ({ text, analysis, languageName, currentLang, t, onReset, isPro, onShowToast, initialData, draftId, onEdit, industry }) => {
     const [data, setData] = useState(null);
-    const [sessionId, setSessionId] = useState(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [activeTab, setActiveTab] = useState('scribe');
@@ -255,16 +254,6 @@ const SynthesisResult = ({ text, analysis, languageName, currentLang, t, onReset
     useEffect(() => {
         if (industry) setLocalIndustry(industry);
     }, [industry]);
-
-    // Update sessionId when draftId is available or data is generated
-    useEffect(() => {
-        if (draftId) {
-            setSessionId(draftId);
-        } else if (data && !sessionId) {
-            // Use the timestamp of the first draft or current time as temporary sessionId
-            setSessionId(Date.now().toString());
-        }
-    }, [draftId, data]);
 
     // Helper: count total word count in output
     const getOutputWordCount = (outputData) => {
@@ -1522,7 +1511,6 @@ const SynthesisResult = ({ text, analysis, languageName, currentLang, t, onReset
             {/* Share Actions */}
             <div className="share-actions-section">
                 <ShareActions
-                    sessionId={sessionId}
                     textToShare={getTextToShare()}
                     analysisResult={data}
                     url={data ? `https://www.ghostnotepro.com/archive/${draftId || 'latest'}` : "https://www.ghostnotepro.com"}

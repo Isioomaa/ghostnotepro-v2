@@ -19,9 +19,6 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = FastAPI()
-# In-memory storage for published strategy sessions
-# Note: This is ephemeral on Vercel unless a database is added.
-PUBLISHED_SESSIONS = {}
 
 # Industry Detection & Glossaries
 INDUSTRY_KEYWORDS = {
@@ -385,32 +382,3 @@ async def generate_post_handler(request: GenerateRequest):
         error_details = traceback.format_exc()
         logger.error(f"Generation Error: {str(e)}\n{error_details}")
         return {"status": "error", "message": str(e), "details": error_details}
-
-# --- PUBLISH & PUBLIC ACCESS ---
-@app.post("/api/publish/{session_id}")
-async def publish_handler(session_id: str, request: dict):
-    try:
-        # Since we don't have a database, we store in the global dict
-        # The frontend sends the content to be published
-        PUBLISHED_SESSIONS[session_id] = {
-            "content": request.get("content"),
-            "language": request.get("language", "EN"),
-            "timestamp": request.get("timestamp"),
-            "industry": request.get("industry")
-        }
-        
-        logger.info(f"Published session {session_id}")
-        return {
-            "status": "success",
-            "publicUrl": f"/p/{session_id}"
-        }
-    except Exception as e:
-        logger.error(f"Publish error: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-@app.get("/api/public/{slug}")
-async def get_public_session(slug: str):
-    if slug not in PUBLISHED_SESSIONS:
-        raise HTTPException(status_code=404, detail="Strategy session not found.")
-    
-    return PUBLISHED_SESSIONS[slug]
