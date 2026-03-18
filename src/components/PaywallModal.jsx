@@ -62,12 +62,15 @@ const PaywallModal = ({ onClose, scenario = 'upsell', t }) => {
                                 <li className="flex items-start">
                                     <span className="text-[#a88e65] mr-2">✓</span> {localT.paywall?.feature_unlimited || "Unlimited Scribe transmutations — no daily cap"}
                                 </li>
-                                <li className="flex items-start">
-                                    <span className="text-[#a88e65] mr-2">✓</span> {localT.paywall?.feature_intelligence || "The Strategist suite — Judgement, Risk Audits, Execution Emails"}
-                                </li>
-                                <li className="flex items-start">
-                                    <span className="text-[#a88e65] mr-2">✓</span> {localT.paywall?.feature_priority || "Priority processing for faster results"}
-                                </li>
+                                 <li className="flex items-start">
+                                     <span className="text-[#a88e65] mr-2">✓</span> {localT.paywall?.feature_intelligence || "The Strategist suite — Judgement, Risk Audits, Execution Emails"}
+                                 </li>
+                                 <li className="flex items-start text-[11px] text-gray-500 italic ml-6 -mt-3 mb-2 leading-relaxed">
+                                     {localT.paywall?.feature_intelligence_subtitle || "Strategic analysis, risk assessment, and ready-to-send executive communications built from your voice."}
+                                 </li>
+                                 <li className="flex items-start">
+                                     <span className="text-[#a88e65] mr-2">✓</span> {localT.paywall?.feature_priority || "Priority processing for faster results"}
+                                 </li>
                                 <li className="flex items-start">
                                     <span className="text-[#a88e65] mr-2">✓</span> {localT.paywall?.feature_storage || "Extended archive and export capabilities"}
                                 </li>
@@ -114,13 +117,6 @@ const PaywallModal = ({ onClose, scenario = 'upsell', t }) => {
                         <p className="text-[11px] text-gray-600 uppercase tracking-[0.2em] opacity-80">
                             {localT.paywall?.cancel || "Cancel anytime. No hidden fees."}
                         </p>
-
-                        <button
-                            onClick={onClose}
-                            className="text-xs text-gray-500 hover:text-[#a88e65] transition-colors uppercase tracking-[0.3em] font-light block mx-auto"
-                        >
-                            {localT.paywall?.restore || "Restore Purchase"}
-                        </button>
 
                         {scenario === 'limit_reached' && (
                             <p className="text-[10px] text-gray-700 mt-4">
