@@ -215,6 +215,13 @@ body {
     margin-bottom: 1rem !important;
 }
 
+/* Long output reflow for intense reading */
+.long-output p, .long-output li, .long-output div[contenteditable] {
+    font-size: 1.125rem;
+    line-height: 1.8;
+    max-width: 72ch;
+}
+
 /* Transparency Label (Layer 2) */
 .transparency-label {
     font-size: 10px;

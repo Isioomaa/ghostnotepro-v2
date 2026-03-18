@@ -12,6 +12,28 @@ const LandingPage = ({ onUploadSuccess, t, currentLang, isPro, initialAudio }) =
                 {t.hero.subtitle}
             </p>
 
+            {/* Static Scribe Preview */}
+            <div className="max-w-xl mx-auto mb-16 px-4">
+                <p className="text-[10px] text-gray-500 uppercase tracking-[0.2em] mb-4 text-center">
+                    {t.labels.what_voice_becomes}
+                </p>
+                <div className="dossier-card p-6 md:p-8 text-left bg-[#0a0a0a] border border-[#222] rounded-xl shadow-2xl relative overflow-hidden">
+                    <div className="absolute top-0 left-0 w-1 h-full bg-[#D4AF37]"></div>
+                    <div className="mb-6">
+                        <h4 className="font-sans font-bold uppercase tracking-widest text-[10px] text-[#D4AF37] mb-2">Core Thesis</h4>
+                        <p className="font-playfair font-bold text-xl md:text-2xl leading-tight text-white">
+                            "The next phase of growth requires decoupling revenue from headcount by productizing our internal operations."
+                        </p>
+                    </div>
+                    <div className="border-l-2 border-[#D4AF37]/20 pl-4 py-1">
+                        <h5 className="font-sans font-bold text-white text-sm md:text-base uppercase tracking-wider mb-2">SaaS Operational Pivot</h5>
+                        <p className="font-serif text-sm md:text-base text-gray-400 leading-relaxed">
+                            We must package our proprietary delivery workflows into a licensable product. This transition will temporarily compress margins but unlock exponential scale by Q4.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
             {/* The Machine (AudioRecorder) */}
             <div className="luxury-glow rounded-3xl p-8 bg-white/5 border border-white/10 backdrop-blur-sm shadow-2xl">
                 <AudioRecorder

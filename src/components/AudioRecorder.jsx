@@ -4,6 +4,7 @@ import { getUsageCount, incrementUsageCount, hasReachedLimit, getDailyLimitMessa
 import { transmuteAudio, saveDraft, generateTitle } from '../services/gemini';
 import { extractHighEmphasisSignals } from '../utils/textAnalysis';
 import PaywallModal from './PaywallModal';
+import { trackEvent, GA_EVENTS } from '../utils/analytics';
 
 export const RAW_DRAFT_PLACEHOLDER = "Audio recording saved as draft. Transmute to see insights.";
 
@@ -52,9 +53,9 @@ const AudioRecorder = ({ onUploadSuccess, t, languageName, isPro, initialAudio }
 
     // 3-stage loading messages (Improvement 4)
     const STAGED_STEPS = [
-        t.messages?.stage_listening || "Listening to your note...",
-        t.messages?.stage_extracting || "Extracting your strategy...",
-        t.messages?.stage_preparing || "Preparing your document..."
+        "Analyzing semantic structure...",
+        "Applying domain mental models...",
+        "Synthesizing executive output..."
     ];
 
     // Staged loading: cycle through 3 stages
@@ -67,12 +68,11 @@ const AudioRecorder = ({ onUploadSuccess, t, languageName, isPro, initialAudio }
             const interval = setInterval(() => {
                 setSynthesisStep(prev => {
                     if (prev < STAGED_STEPS.length - 1) {
-                        setShowDelayedMessage(false); // Reset delayed message on stage change
                         return prev + 1;
                     }
                     return prev;
                 });
-            }, 3500);
+            }, 7000);
 
             return () => clearInterval(interval);
         } else {
@@ -88,7 +88,7 @@ const AudioRecorder = ({ onUploadSuccess, t, languageName, isPro, initialAudio }
             setShowDelayedMessage(true);
         }, 20000);
         return () => clearTimeout(timer);
-    }, [loading, loadingStartTime, synthesisStep]);
+    }, [loading, loadingStartTime]);
 
     // Initialize from initialAudio prop
     useEffect(() => {
@@ -307,6 +307,7 @@ const AudioRecorder = ({ onUploadSuccess, t, languageName, isPro, initialAudio }
             mediaRecorderRef.current.start();
             setIsRecording(true);
             setRecordingTime(0);
+            trackEvent(GA_EVENTS.RECORDING_START);
 
             timerRef.current = setInterval(() => {
                 setRecordingTime(prev => prev + 1);
@@ -322,6 +323,9 @@ const AudioRecorder = ({ onUploadSuccess, t, languageName, isPro, initialAudio }
             mediaRecorderRef.current.stop();
             setIsRecording(false);
             clearInterval(timerRef.current);
+            trackEvent(GA_EVENTS.RECORDING_COMPLETE, {
+                duration: recordingTime
+            });
         }
     };
 
@@ -357,6 +361,10 @@ const AudioRecorder = ({ onUploadSuccess, t, languageName, isPro, initialAudio }
         }
 
         setLoading(true);
+        trackEvent(GA_EVENTS.TRANSMUTATION_START, {
+            source: audioBlob ? 'record' : 'upload',
+            duration: audioDuration
+        });
 
         try {
             const response = await transmuteAudio(audioData, languageName);
@@ -427,10 +435,15 @@ const AudioRecorder = ({ onUploadSuccess, t, languageName, isPro, initialAudio }
                 });
             }
 
-            onUploadSuccess(textValue, selectedPlatforms, analysisData);
+            if (onUploadSuccess) {
+                onUploadSuccess(textValue, selectedPlatforms, analysisData);
+                trackEvent(GA_EVENTS.TRANSMUTATION_COMPLETE, {
+                    has_analysis: !!analysisData
+                });
+            }
         } catch (err) {
             console.error(err);
-            setError(err.message || t.messages?.transmutation_fail || "The transmuter encountered a temporary issue. Give it another go.");
+            setError(err.message || t.messages?.transmutation_fail || "The transmutation was interrupted. Let's try that again.");
         } finally {
             setLoading(false);
         }
@@ -518,6 +531,11 @@ const AudioRecorder = ({ onUploadSuccess, t, languageName, isPro, initialAudio }
                 <p className="text-[#999] text-xs italic max-w-xs text-center">
                     {mode === 'record' ? t.modes.record_desc : t.modes.upload_desc}
                 </p>
+                {mode === 'record' && (
+                    <p className="text-[10px] text-gray-500 max-w-xs text-center mb-4 mt-2">
+                        {t.messages.privacy_note}
+                    </p>
+                )}
             </div>
 
             <div className="flex flex-col items-center">
@@ -559,7 +577,12 @@ const AudioRecorder = ({ onUploadSuccess, t, languageName, isPro, initialAudio }
                                     </svg>
                                 </button>
                                 {(!isProActive && hasReachedLimit()) ? null : (
-                                    <p className="text-[#cccccc] text-sm">{t.messages.tap_record}</p>
+                                    <div className="text-center space-y-2">
+                                        <p className="text-[#cccccc] text-sm">{t.messages.tap_record}</p>
+                                        <p className="text-gray-500 text-[10px] italic max-w-[200px] leading-relaxed">
+                                            {t.messages.record_guidance}
+                                        </p>
+                                    </div>
                                 )}
                             </div>
                         ) : isRecording ? (

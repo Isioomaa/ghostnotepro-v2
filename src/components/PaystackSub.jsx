@@ -2,6 +2,7 @@ import React from 'react';
 import { usePaystackPayment } from 'react-paystack';
 import { setPro } from '../utils/usageTracker';
 import { TRANSLATIONS } from '../constants/languages';
+import { trackEvent, GA_EVENTS } from '../utils/analytics';
 
 const PaystackSub = ({ email, amount, currency, onSuccess, onClose, t }) => {
     // 1. Safety Fallbacks
@@ -39,6 +40,11 @@ const PaystackSub = ({ email, amount, currency, onSuccess, onClose, t }) => {
             alert(localT.paywall?.payment_error || "Payment system is temporarily unavailable. Please try again.");
             return;
         }
+
+        trackEvent(GA_EVENTS.UPGRADE_CLICK, {
+            currency: safeCurrency,
+            amount: safeAmount / 100
+        });
 
         try {
             initializePayment(

@@ -7,6 +7,7 @@ import { renderMarkdownBlock } from '../utils/renderMarkdown';
 import { exportToPDF } from '../utils/exportPDF';
 import ShareActions from './ShareActions';
 import PaywallModal from './PaywallModal';
+import { trackEvent, GA_EVENTS } from '../utils/analytics';
 
 // Skeleton Loader Component
 const SkeletonCard = () => (
@@ -33,20 +34,36 @@ const SkeletonDashboard = () => (
 // Transparency Label Component (Layer 2 - Decision Transparency)
 const TransparencyLabel = ({ type, t }) => {
     const [showTooltip, setShowTooltip] = useState(false);
-    const label = type === 'context'
-        ? (t?.messages?.expanded_from_context || "Expanded from context")
-        : (t?.messages?.strategic_implication || "Interpreted as strategic implication");
-    const tooltip = t?.messages?.expanded_tooltip || "This section was developed beyond what was explicitly stated in your note.";
+    
+    let label = "";
+    let tooltip = "";
+    let styling = "";
+    let icon = null;
+
+    if (type === 'context') {
+        label = t?.messages?.expanded_from_context || "Expanded from context";
+        tooltip = t?.messages?.expanded_tooltip || "This section was developed beyond what was explicitly stated in your note.";
+        styling = "text-[10px] italic text-gray-400 font-light tracking-wide ml-2 border-b border-dashed border-gray-500";
+    } else if (type === 'statistic') {
+        label = t?.messages?.verify_before_citing || "Verify before citing.";
+        tooltip = t?.messages?.verify_tooltip || "This figure was generated from AI domain knowledge. Verify independently before sharing.";
+        styling = "text-[10px] italic text-red-400 font-light tracking-wide ml-2 border-b border-dashed border-red-500/50 flex items-center";
+        icon = <span className="mr-1">⚠️</span>;
+    } else {
+        label = t?.messages?.strategic_implication || "Interpreted as strategic implication";
+        tooltip = "Contextual inference applied.";
+        styling = "text-[10px] italic text-gray-400 font-light tracking-wide ml-2 border-b border-dashed border-gray-500";
+    }
 
     return (
         <span
-            className="relative inline-flex items-center cursor-help"
+            className="relative inline-flex items-center cursor-help mt-1 md:mt-0"
             onMouseEnter={() => setShowTooltip(true)}
             onMouseLeave={() => setShowTooltip(false)}
             onClick={() => setShowTooltip(!showTooltip)}
         >
-            <span className="text-[10px] italic text-gray-400 font-light tracking-wide ml-2 border-b border-dashed border-gray-500">
-                {label}
+            <span className={styling}>
+                {icon}{label}
             </span>
             {showTooltip && (
                 <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 p-3 bg-gray-800 text-gray-300 text-[10px] leading-relaxed rounded shadow-xl z-50 border border-gray-700 w-max max-w-[240px] text-center whitespace-normal break-words">
@@ -135,6 +152,48 @@ const SynthesisResult = ({ text, analysis, languageName, currentLang, t, onReset
     const [isEditingExecutiveState, setIsEditingExecutiveState] = useState(false);
     const [isExecutiveStateOverridden, setIsExecutiveStateOverridden] = useState(false);
 
+    // Quality Check & Re-transmute (Section 3)
+    const [showQualityWarning, setShowQualityWarning] = useState(false);
+    const [originalIndustry, setOriginalIndustry] = useState(null);
+
+    // Pre-Action Confirmations (Section 5)
+    const [showRegenerationWarning, setShowRegenerationWarning] = useState(false);
+    const [showArchiveConfirm, setShowArchiveConfirm] = useState(false);
+    const [showExportConfirm, setShowExportConfirm] = useState(false);
+    const [showUndoBar, setShowUndoBar] = useState(false);
+    const [lastArchiveId, setLastArchiveId] = useState(null);
+
+    // Staged Loading Experience (Section 6)
+    const [synthesisStep, setSynthesisStep] = useState(0);
+    const [loadingStartTime, setLoadingStartTime] = useState(null);
+    const [showDelayedMessage, setShowDelayedMessage] = useState(false);
+    const STAGED_STEPS = [
+        "Analyzing semantic structure...",
+        "Applying domain mental models...",
+        "Synthesizing executive output..."
+    ];
+
+    useEffect(() => {
+        if (loading) {
+            setSynthesisStep(0);
+            setLoadingStartTime(Date.now());
+            setShowDelayedMessage(false);
+            const interval = setInterval(() => {
+                setSynthesisStep(prev => prev < STAGED_STEPS.length - 1 ? prev + 1 : prev);
+            }, 7000);
+            return () => clearInterval(interval);
+        } else {
+            setShowDelayedMessage(false);
+            setLoadingStartTime(null);
+        }
+    }, [loading]);
+
+    useEffect(() => {
+        if (!loading || !loadingStartTime) return;
+        const timer = setTimeout(() => setShowDelayedMessage(true), 20000);
+        return () => clearTimeout(timer);
+    }, [loading, loadingStartTime]);
+
     // Default translation fallback
     const localT = t || TRANSLATIONS.EN;
 
@@ -142,7 +201,33 @@ const SynthesisResult = ({ text, analysis, languageName, currentLang, t, onReset
         if (analysis && analysis.executive_state && !selectedExecutiveState && !isExecutiveStateOverridden) {
             setSelectedExecutiveState(analysis.executive_state || analysis.tone || "Reflective");
         }
-    }, [analysis]);
+        
+        // Quality check logic
+        if (text) {
+            const words = text.trim().split(/\s+/).length;
+            const durationStr = analysis?.duration || "0m 0s";
+            let durationSecs = 0;
+            const minsMatch = durationStr.match(/(\d+)m/);
+            const secsMatch = durationStr.match(/(\d+)s/);
+            if (minsMatch) durationSecs += parseInt(minsMatch[1], 10) * 60;
+            if (secsMatch) durationSecs += parseInt(secsMatch[1], 10);
+            
+            const fillerWords = (text.match(/\b(um|uh|like|you|know|basically)\b/gi) || []).length;
+            const fillerRatio = words > 0 ? fillerWords / words : 0;
+            
+            const sentences = text.split(/[.!?]+/).filter(Boolean).length;
+            const wordsPerSentence = sentences > 0 ? words / sentences : 0;
+            
+            const isShort = durationSecs > 0 && durationSecs < 30;
+            const isFragmented = wordsPerSentence < 5 && sentences > 3;
+            
+            if (isShort || fillerRatio > 0.05 || isFragmented) {
+                setShowQualityWarning(true);
+            } else {
+                setShowQualityWarning(false);
+            }
+        }
+    }, [analysis, text]);
 
     // Initialize with initialData if provided
     useEffect(() => {
@@ -161,8 +246,9 @@ const SynthesisResult = ({ text, analysis, languageName, currentLang, t, onReset
     useEffect(() => {
         if (data && !originalData) {
             setOriginalData(JSON.parse(JSON.stringify(data)));
+            setOriginalIndustry(industry);
         }
-    }, [data]);
+    }, [data, industry]);
 
     // Helper: count total word count in output
     const getOutputWordCount = (outputData) => {
@@ -191,12 +277,26 @@ const SynthesisResult = ({ text, analysis, languageName, currentLang, t, onReset
         return (d.strategic_pillars?.length || 0);
     };
 
+    const handleGenerateClick = () => {
+        if (isEditingOutput) {
+            setShowRegenerationWarning(true);
+        } else {
+            handleGenerate();
+        }
+    };
+
     const handleGenerate = async () => {
         setLoading(true);
         setError(null);
         setOriginalData(null); // Reset original on new generation
         setEditedData(null);
         setIsEditingOutput(false);
+        trackEvent(GA_EVENTS.TRANSMUTATION_START, {
+            is_pro: isPro,
+            industry: industry,
+            state: selectedExecutiveState,
+            structure: structureMode
+        });
         try {
             console.log('🚀 Starting generation. isPro:', isPro);
             console.log('--- Industry Context:', industry);
@@ -241,6 +341,10 @@ const SynthesisResult = ({ text, analysis, languageName, currentLang, t, onReset
             setData(combinedResult);
             setOriginalData(JSON.parse(JSON.stringify(combinedResult)));
             if (strategistError) setError(strategistError);
+            
+            trackEvent(GA_EVENTS.TRANSMUTATION_COMPLETE, {
+                has_strategist: isPro && !!combinedResult.pro_tier
+            });
 
             // Auto-save output
             if (draftId) {
@@ -358,10 +462,71 @@ const SynthesisResult = ({ text, analysis, languageName, currentLang, t, onReset
         }
     };
 
+    const handleArchiveClick = () => {
+        setShowArchiveConfirm(true);
+    };
+
+    const performArchive = async () => {
+        setShowArchiveConfirm(false);
+        // Silently save to museum/archive
+        try {
+            const drafts = JSON.parse(localStorage.getItem('ghostnote_drafts') || '[]');
+            if (drafts.length > 0) {
+                const draft = drafts[0];
+                const archiveId = Date.now();
+                const archiveEntry = { ...draft, id: archiveId, archived_at: new Date().toISOString() };
+                const archive = JSON.parse(localStorage.getItem('ghostnote_archive') || '[]');
+                localStorage.setItem('ghostnote_archive', JSON.stringify([archiveEntry, ...archive]));
+                
+                setLastArchiveId(archiveId);
+                setShowUndoBar(true);
+                setTimeout(() => setShowUndoBar(false), 5000);
+                
+                trackEvent(GA_EVENTS.DOC_SHARED, {
+                    type: 'museum_archive'
+                });
+                
+                onShowToast(localT.messages?.archived || "Added to your Museum.");
+            }
+        } catch (err) {
+            console.error('Archive failed', err);
+        }
+    };
+
+    const undoArchive = () => {
+        if (!lastArchiveId) return;
+        try {
+            const archive = JSON.parse(localStorage.getItem('ghostnote_archive') || '[]');
+            const filtered = archive.filter(a => a.id !== lastArchiveId);
+            localStorage.setItem('ghostnote_archive', JSON.stringify(filtered));
+            setShowUndoBar(false);
+            setLastArchiveId(null);
+            onShowToast("Archive undone.");
+        } catch (err) {
+            console.error('Undo failed', err);
+        }
+    };
+
+    const handleExportClick = () => {
+        setShowExportConfirm(true);
+    };
+
+    const performExport = () => {
+        setShowExportConfirm(false);
+        exportToPDF(data, isPro, localT);
+        trackEvent(GA_EVENTS.PDF_EXPORT, {
+            is_pro: isPro
+        });
+    };
+
     const copyToClipboard = (content, label) => {
         navigator.clipboard.writeText(content);
         const msg = (localT.messages?.copy_success || "Link copied").replace('Link ', '');
         onShowToast(`${label} ${msg}`);
+        trackEvent(GA_EVENTS.DOC_SHARED, {
+            type: 'clipboard',
+            label: label
+        });
     };
 
     // Derived Tabs
@@ -402,9 +567,14 @@ const SynthesisResult = ({ text, analysis, languageName, currentLang, t, onReset
                         <div className="flex flex-col items-start">
                             <p className="text-[#999] text-[10px] uppercase tracking-[0.3em]">{localT.scribe?.transcription || "TRANSCRIPTION"}</p>
                             {industry && (
-                                <span className="text-tactical-amber text-[9px] font-bold uppercase tracking-widest mt-1 px-2 py-0.5 bg-tactical-amber/10 border border-tactical-amber/30 rounded-full">
-                                    {localT.strategist.specializing_in} {industry}
-                                </span>
+                                <div className="flex flex-col items-start mt-2">
+                                    <span className="text-tactical-amber text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 bg-tactical-amber/10 border border-tactical-amber/30 rounded-full">
+                                        {localT.strategist.specializing_in} {industry}
+                                    </span>
+                                    <span className="text-[10px] text-gray-500 italic mt-1.5 max-w-[200px] leading-snug">
+                                        AI is framing your output through a {industry.toLowerCase()} lens — change to adjust.
+                                    </span>
+                                </div>
                             )}
                         </div>
                         {!isEditing && (
@@ -430,7 +600,7 @@ const SynthesisResult = ({ text, analysis, languageName, currentLang, t, onReset
                                     onClick={() => {
                                         setIsEditing(false);
                                         if (onEdit) onEdit(editableText);
-                                        handleGenerate();
+                                        handleGenerateClick();
                                     }}
                                     className="flex-1 py-3 bg-tactical-amber text-black text-[10px] font-bold uppercase tracking-widest rounded-sm hover:bg-white transition-all"
                                 >
@@ -485,6 +655,9 @@ const SynthesisResult = ({ text, analysis, languageName, currentLang, t, onReset
                                                         setSelectedExecutiveState(state);
                                                         setIsExecutiveStateOverridden(true);
                                                         setIsEditingExecutiveState(false);
+                                                        trackEvent(GA_EVENTS.EXEC_STATE_OVERRIDE, {
+                                                            state: state
+                                                        });
                                                     }}
                                                     className={`px-3 py-1 bg-white/5 border ${selectedExecutiveState === state ? 'border-tactical-amber text-tactical-amber' : 'border-white/10 text-white hover:border-white/30'} rounded-full text-[10px] font-medium uppercase tracking-wider transition-colors`}
                                                 >
@@ -511,6 +684,7 @@ const SynthesisResult = ({ text, analysis, languageName, currentLang, t, onReset
                                     {isExecutiveStateOverridden && !isEditingExecutiveState && (
                                         <p className="text-[9px] italic text-gray-500 mt-1">Adjusted before generation</p>
                                     )}
+                                    <p className="text-[10px] italic text-gray-500 mt-2">This shapes the tone of your document.</p>
                                 </div>
                             </div>
                         </div>
@@ -543,7 +717,10 @@ const SynthesisResult = ({ text, analysis, languageName, currentLang, t, onReset
                     <div className="max-w-xs mx-auto mb-8 animate-in fade-in">
                         <div className="flex justify-center space-x-6 border-b border-white/10 pb-2">
                             <button
-                                onClick={() => setStructureMode('Brief')}
+                                onClick={() => {
+                                    setStructureMode('Brief');
+                                    trackEvent('structure_changed', { mode: 'Brief' });
+                                }}
                                 className={`text-[11px] uppercase tracking-widest font-bold pb-2 relative transition-colors ${structureMode === 'Brief' ? 'text-gold-600' : 'text-gray-500 hover:text-gray-300'}`}
                             >
                                 Brief
@@ -552,7 +729,10 @@ const SynthesisResult = ({ text, analysis, languageName, currentLang, t, onReset
                                 )}
                             </button>
                             <button
-                                onClick={() => setStructureMode('Detailed')}
+                                onClick={() => {
+                                    setStructureMode('Detailed');
+                                    trackEvent('structure_changed', { mode: 'Detailed' });
+                                }}
                                 className={`text-[11px] uppercase tracking-widest font-bold pb-2 relative transition-colors ${structureMode === 'Detailed' ? 'text-gold-600' : 'text-gray-500 hover:text-gray-300'}`}
                             >
                                 Detailed
@@ -561,6 +741,9 @@ const SynthesisResult = ({ text, analysis, languageName, currentLang, t, onReset
                                 )}
                             </button>
                         </div>
+                        <p className="text-center text-[10px] italic text-gray-500 mt-3 px-4">
+                            Controls how deeply the AI develops your strategy — not just length.
+                        </p>
                     </div>
                 )}
 
@@ -568,17 +751,53 @@ const SynthesisResult = ({ text, analysis, languageName, currentLang, t, onReset
                 <div className="flex flex-col items-center">
                     {loading ? (
                         <div className="w-full max-w-2xl">
-                            <div className="text-center mb-6">
-                                <p className="text-tactical-amber text-sm uppercase tracking-widest animate-pulse">
-                                    {localT.messages?.processing || "TRANSMUTING..."}
-                                </p>
+                            <div className="space-y-12 fade-in mb-8">
+                                <div className="flex flex-col items-center space-y-8">
+                                    <div className="w-24 h-24 rounded-full border-2 border-[#A88E65] flex items-center justify-center relative">
+                                        <div className="absolute inset-0 rounded-full border-2 border-[#A88E65] animate-ping opacity-20"></div>
+                                        <div className="w-4 h-4 border-2 border-[#A88E65] border-t-transparent rounded-full animate-spin"></div>
+                                    </div>
+                                    
+                                    <div className="w-full max-w-xs mx-auto">
+                                        <div className="h-0.5 bg-white/10 rounded-full overflow-hidden">
+                                            <div
+                                                className="h-full bg-[#A88E65] rounded-full transition-all duration-1000 ease-out"
+                                                style={{ width: `${((synthesisStep + 1) / STAGED_STEPS.length) * 100}%` }}
+                                            />
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="text-center space-y-3">
+                                        <p className="text-[#F9F7F5] text-lg font-light tracking-wide">
+                                            {STAGED_STEPS[synthesisStep]}
+                                        </p>
+                                        <div className="flex justify-center space-x-1">
+                                            {STAGED_STEPS.map((_, idx) => (
+                                                <div
+                                                    key={idx}
+                                                    className={`w-2 h-2 rounded-full transition-all ${idx <= synthesisStep ? 'bg-[#A88E65]' : 'bg-gray-600'}`}
+                                                />
+                                            ))}
+                                        </div>
+                                        {showDelayedMessage && (
+                                            <p className="text-gray-500 text-xs italic mt-2 animate-pulse">
+                                                {localT.messages?.stage_delayed || "This is taking a little longer than usual — still working."}
+                                            </p>
+                                        )}
+                                    </div>
+                                </div>
                             </div>
                             <SkeletonDashboard />
                         </div>
                     ) : !isEditing && (
-                        <>
+                        <div className="flex flex-col items-center">
+                            {showQualityWarning && (
+                                <p className="text-[#A88E65] text-[10px] italic mb-4 max-w-sm text-center">
+                                    Some parts of your recording may not have transcribed clearly — review before generating.
+                                </p>
+                            )}
                             <motion.button
-                                onClick={handleGenerate}
+                                onClick={handleGenerateClick}
                                 disabled={loading}
                                 className="btn-transmute w-full md:w-auto min-w-[280px]"
                                 whileTap={{ scale: 0.96 }}
@@ -586,7 +805,7 @@ const SynthesisResult = ({ text, analysis, languageName, currentLang, t, onReset
                                 {localT.labels?.generate_suite || "GENERATE EXECUTIVE SUITE"}
                             </motion.button>
                             {error && <p className="mt-4 text-[#A88E65] text-sm italic">{error}</p>}
-                        </>
+                        </div>
                     )}
                 </div>
             </div>
@@ -612,6 +831,8 @@ const SynthesisResult = ({ text, analysis, languageName, currentLang, t, onReset
 
             // Insufficient input check (Improvement 5)
             const wordCount = getOutputWordCount(freeData);
+            const longOutput = wordCount > 800;
+
             if (wordCount < 10 && !freeData.core_thesis) {
                 return (
                     <div className="flex flex-col items-center justify-center p-16 text-center">
@@ -623,7 +844,7 @@ const SynthesisResult = ({ text, analysis, languageName, currentLang, t, onReset
             }
 
             return (
-                <div className={`space-y-8 md:space-y-12 animate-in fade-in duration-700 bg-white text-gray-900 p-5 md:p-12 ${shortOutput ? 'compact-output' : ''}`}>
+                <div className={`space-y-8 md:space-y-12 animate-in fade-in duration-700 bg-white text-gray-900 p-5 md:p-12 ${shortOutput ? 'compact-output' : ''} ${longOutput ? 'long-output' : ''}`}>
                     {/* Process Transparency (Layer 1) */}
                     {renderProcessTransparency(freeData)}
 
@@ -688,11 +909,15 @@ const SynthesisResult = ({ text, analysis, languageName, currentLang, t, onReset
                                             </>
                                         ) : (
                                             <>
-                                                <h5 className="font-sans font-bold text-gray-900 text-base md:text-lg uppercase tracking-wider mb-2 md:mb-4 leading-tight">
-                                                    {pillar.title}
-                                                    {/* Layer 2: Decision Transparency — mark expanded pillars */}
-                                                    {idx >= 2 && <TransparencyLabel type="context" t={localT} />}
-                                                </h5>
+                                                <div className="flex flex-col md:flex-row md:items-center items-start mb-2 md:mb-4">
+                                                    <h5 className="font-sans font-bold text-gray-900 text-base md:text-lg uppercase tracking-wider leading-tight">
+                                                        {pillar.title}
+                                                    </h5>
+                                                    <div className="flex flex-wrap">
+                                                        {pillar.is_expanded && <TransparencyLabel type="context" t={localT} />}
+                                                        {pillar.has_statistics && <TransparencyLabel type="statistic" t={localT} />}
+                                                    </div>
+                                                </div>
                                                 <p className="font-serif text-base md:text-xl text-gray-700 leading-relaxed max-w-2xl">
                                                     {pillar.rich_description || pillar.description}
                                                 </p>
@@ -1072,6 +1297,120 @@ const SynthesisResult = ({ text, analysis, languageName, currentLang, t, onReset
                 </div>
             )}
 
+            {/* Re-transmute Action */}
+            {data && industry && originalIndustry && industry !== originalIndustry && !loading && (
+                <div className="mb-6 flex justify-center fade-in">
+                    <motion.button
+                        onClick={() => {
+                            setOriginalIndustry(industry);
+                            handleGenerate();
+                        }}
+                        className="px-6 py-3 bg-[#A88E65] text-black text-[10px] font-bold uppercase tracking-widest rounded-sm hover:bg-white transition-all shadow-lg flex items-center space-x-2"
+                        whileTap={{ scale: 0.98 }}
+                    >
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                        <span>{localT.labels?.retransmute || "Re-transmute with new domain"}</span>
+                    </motion.button>
+                </div>
+            )}
+
+            {/* Modals for Pre-Action Confirmations (Section 5) */}
+            {showRegenerationWarning && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm px-4">
+                    <div className="bg-[#111] border border-white/10 p-6 md:p-8 rounded-xl max-w-md w-full text-center fade-in">
+                        <h3 className="text-white text-lg font-playfair font-bold mb-4">Regeneration Warning</h3>
+                        <p className="text-gray-400 text-sm mb-8 leading-relaxed">
+                            You have edited sections — regenerating will replace them. Continue?
+                        </p>
+                        <div className="flex flex-col md:flex-row space-y-3 md:space-y-0 md:space-x-4">
+                            <button
+                                onClick={() => {
+                                    setShowRegenerationWarning(false);
+                                    handleGenerate();
+                                }}
+                                className="flex-1 py-3 border border-[#A88E65] text-[#A88E65] text-[10px] font-bold uppercase tracking-widest rounded-sm hover:bg-[#A88E65] hover:text-black transition-all shadow-[0_0_15px_rgba(168,142,101,0.2)]"
+                            >
+                                Continue
+                            </button>
+                            <button
+                                onClick={() => setShowRegenerationWarning(false)}
+                                className="flex-1 py-3 border border-gray-600 text-gray-400 text-[10px] font-bold uppercase tracking-widest rounded-sm hover:text-white hover:border-gray-500 transition-all"
+                            >
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+            
+            {showArchiveConfirm && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm px-4">
+                    <div className="bg-[#111] border border-white/10 p-6 md:p-8 rounded-xl max-w-md w-full text-center fade-in">
+                        <div className="w-12 h-12 rounded-full border border-tactical-amber flex items-center justify-center mx-auto mb-6 bg-tactical-amber/5">
+                            <span className="text-tactical-amber text-xl">🏛️</span>
+                        </div>
+                        <h3 className="text-white text-lg font-playfair font-bold mb-4">Museum Mode</h3>
+                        <p className="text-gray-400 text-sm mb-8 leading-relaxed">
+                            You're about to share this document publicly. Anyone with the link can view it.
+                        </p>
+                        <div className="flex flex-col md:flex-row space-y-3 md:space-y-0 md:space-x-4">
+                            <button
+                                onClick={performArchive}
+                                className="flex-1 py-3 border border-[#A88E65] text-[#A88E65] text-[10px] font-bold uppercase tracking-widest rounded-sm hover:bg-[#A88E65] hover:text-black transition-all shadow-[0_0_15px_rgba(168,142,101,0.2)]"
+                            >
+                                Share
+                            </button>
+                            <button
+                                onClick={() => setShowArchiveConfirm(false)}
+                                className="flex-1 py-3 border border-gray-600 text-gray-400 text-[10px] font-bold uppercase tracking-widest rounded-sm hover:text-white hover:border-gray-500 transition-all"
+                            >
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+            
+            {showExportConfirm && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm px-4">
+                    <div className="bg-[#111] border border-white/10 p-6 md:p-8 rounded-xl max-w-md w-full text-center fade-in">
+                        <h3 className="text-white text-lg font-playfair font-bold mb-4">Export Document</h3>
+                        <p className="text-gray-400 text-sm mb-4 leading-relaxed">
+                            Ready to export? Take a final look.
+                        </p>
+                        <p className="text-[#A88E65] text-sm mb-8 leading-relaxed italic">
+                            Verify any statistics or figures before sharing.
+                        </p>
+                        <div className="flex flex-col md:flex-row space-y-3 md:space-y-0 md:space-x-4">
+                            <button
+                                onClick={performExport}
+                                className="flex-1 py-3 border border-[#A88E65] text-[#A88E65] text-[10px] font-bold uppercase tracking-widest rounded-sm hover:bg-[#A88E65] hover:text-black transition-all shadow-[0_0_15px_rgba(168,142,101,0.2)]"
+                            >
+                                Export
+                            </button>
+                            <button
+                                onClick={() => setShowExportConfirm(false)}
+                                className="flex-1 py-3 border border-gray-600 text-gray-400 text-[10px] font-bold uppercase tracking-widest rounded-sm hover:text-white hover:border-gray-500 transition-all"
+                            >
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {showUndoBar && (
+                <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[100] bg-[#1a1a1a] border border-[#A88E65]/30 shadow-2xl rounded-full px-6 py-4 flex items-center space-x-6 fade-in animate-in slide-in-from-bottom-5">
+                    <span className="text-gray-300 text-sm font-sans tracking-wide">Archived —</span>
+                    <button 
+                        onClick={undoArchive}
+                        className="text-tactical-amber text-xs font-bold uppercase tracking-widest hover:text-white transition-colors underline decoration-tactical-amber/50 underline-offset-4"
+                    >
+                        Undo
+                    </button>
+                </div>
+            )}
+
             {/* The Main Card */}
             <div className="bg-white w-full max-w-4xl mx-auto rounded-xl shadow-[0_40px_100px_-20px_rgba(0,0,0,0.15)] overflow-hidden border border-gray-100">
 
@@ -1109,27 +1448,7 @@ const SynthesisResult = ({ text, analysis, languageName, currentLang, t, onReset
             {data && (
                 <div className="flex flex-col md:flex-row justify-center items-center gap-4 mb-12 mt-8 md:mt-0">
                     <motion.button
-                        onClick={() => {
-                            const id = `cos_${Date.now().toString(36)}_${Math.random().toString(36).substr(2, 5)}`;
-                            const archiveData = {
-                                id,
-                                timestamp: Date.now(),
-                                content: data.free_tier || data.pro_tier || data,
-                                analysis: { audit: analysis },
-                                mode: activeTab,
-                                language: languageName
-                            };
-
-                            try {
-                                localStorage.setItem(`ghostnote_archive_${id}`, JSON.stringify(archiveData));
-                                const url = `https://www.ghostnotepro.com/archive/${id}`;
-                                navigator.clipboard.writeText(url);
-                                onShowToast(localT.messages?.archive_success || "Strategic brief archived. Link copied.");
-                            } catch (err) {
-                                console.error("Archive failed", err);
-                                onShowToast(localT.messages?.archive_fail || "Archiving was interrupted. Please try once more.");
-                            }
-                        }}
+                        onClick={handleArchiveClick}
                         className="w-full md:w-auto bg-black text-white border border-gray-800 px-8 py-4 font-sans text-xs font-bold uppercase tracking-[0.2em] hover:bg-tactical-amber hover:text-black hover:border-tactical-amber transition-all shadow-lg"
                         whileTap={{ scale: 0.98 }}
                     >
@@ -1137,14 +1456,7 @@ const SynthesisResult = ({ text, analysis, languageName, currentLang, t, onReset
                     </motion.button>
 
                     <motion.button
-                        onClick={() => {
-                            exportToPDF(data, activeTab, {
-                                transcript: text,
-                                analysis: analysis,
-                                industry: industry
-                            });
-                            onShowToast("PDF export ready");
-                        }}
+                        onClick={handleExportClick}
                         className="w-full md:w-auto bg-transparent text-tactical-amber border border-tactical-amber/40 px-8 py-4 font-sans text-xs font-bold uppercase tracking-[0.2em] hover:bg-tactical-amber hover:text-black transition-all shadow-lg flex items-center justify-center space-x-2"
                         whileTap={{ scale: 0.98 }}
                     >

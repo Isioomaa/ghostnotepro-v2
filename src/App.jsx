@@ -16,6 +16,7 @@ import { PrivacyPolicy, TermsOfService, RefundPolicy } from './components/LegalD
 import LanguageSelector from './components/LanguageSelector';
 import { FaLinkedin, FaXTwitter, FaWhatsapp, FaArrowLeft } from 'react-icons/fa6';
 import PaywallModal from './components/PaywallModal';
+import { trackEvent, GA_EVENTS } from './utils/analytics';
 
 const detectLanguage = () => {
   try {
@@ -51,6 +52,22 @@ function MainApp() {
     window.addEventListener(PRO_STATUS_CHANGED_EVENT, handleProChange);
     return () => window.removeEventListener(PRO_STATUS_CHANGED_EVENT, handleProChange);
   }, []);
+
+  // Page Load Tracking (Section 13)
+  useEffect(() => {
+    trackEvent(GA_EVENTS.PAGE_LOAD, {
+      language: currentLang,
+      pro_status: isPro
+    });
+  }, []);
+
+  useEffect(() => {
+    if (showPaywall) {
+      trackEvent(GA_EVENTS.PAYWALL_REACHED, {
+        context: 'upsell'
+      });
+    }
+  }, [showPaywall]);
 
   const t = TRANSLATIONS[currentLang] || TRANSLATIONS.EN;
 

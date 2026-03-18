@@ -292,15 +292,17 @@ async def generate_post_handler(request: GenerateRequest):
                 json_structure = """
             Return ONLY a JSON object (no markdown, no code blocks) with:
             - core_thesis: 30-60 word strategic thesis statement
-            - strategic_pillars: array of objects with "title" and "description" (1-2 sentences of COS analysis)
+            - strategic_pillars: array of objects with "title", "description" (1-2 sentences of COS analysis), "is_expanded" (boolean, true if developed beyond what was explicitly stated in the input), "has_statistics" (boolean, true if contains any specific numbers, figures, or statistics)
+            - has_numerical_claims: boolean (true if the entire output contains any statistics, figures, or numbers)
                 """
             else:
                 structure_instruction = "You must provide a DETAILED output including tactical steps."
                 json_structure = """
             Return ONLY a JSON object (no markdown, no code blocks) with:
             - core_thesis: 30-60 word strategic thesis statement
-            - strategic_pillars: array of objects with "title" and "description" (1-2 sentences of COS analysis)
+            - strategic_pillars: array of objects with "title", "description" (1-2 sentences of COS analysis), "is_expanded" (boolean, true if developed beyond what was explicitly stated), "has_statistics" (boolean, true if contains numbers, figures, or stats)
             - tactical_steps: array of actionable strings
+            - has_numerical_claims: boolean (true if the entire output contains any statistics, figures, or numbers)
                 """
             
             prompt = f"""
@@ -328,6 +330,7 @@ async def generate_post_handler(request: GenerateRequest):
                 json_structure = """
             Return ONLY a JSON object (no markdown, no code blocks) with:
             - judgment: 150-250 words of deep strategic judgment
+            - has_numerical_claims: boolean (true if the entire output contains any statistics, figures, or numbers)
                 """
             else:
                 structure_instruction = "You must provide a DETAILED output including risk audits and email drafts."
@@ -336,6 +339,7 @@ async def generate_post_handler(request: GenerateRequest):
             - judgment: 150-250 words of deep strategic judgment
             - riskAudit: 150-250 words of risk analysis
             - emailDraft: A ready-to-send draft starting with 'SUBJECT: '
+            - has_numerical_claims: boolean (true if the entire output contains any statistics, figures, or numbers)
                 """
                 
             prompt = f"""

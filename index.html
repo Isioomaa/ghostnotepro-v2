@@ -22,6 +22,17 @@
   <meta name="twitter:title" content="GhostNote Pro" />
   <meta name="twitter:description"
     content="The executive-grade thinking system for transmuting voice notes into strategy." />
+  
+  <!-- Google Analytics (Section 13) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=%VITE_GOOGLE_ANALYTICS_ID%"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag() { dataLayer.push(arguments); }
+    gtag('js', new Date());
+    gtag('config', '%VITE_GOOGLE_ANALYTICS_ID%', {
+      page_path: window.location.pathname,
+    });
+  </script>
 </head>
 
 <body>
