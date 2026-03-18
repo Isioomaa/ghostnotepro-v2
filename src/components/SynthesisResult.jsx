@@ -256,6 +256,16 @@ const SynthesisResult = ({ text, analysis, languageName, currentLang, t, onReset
         if (industry) setLocalIndustry(industry);
     }, [industry]);
 
+    // Update sessionId when draftId is available or data is generated
+    useEffect(() => {
+        if (draftId) {
+            setSessionId(draftId);
+        } else if (data && !sessionId) {
+            // Use the timestamp of the first draft or current time as temporary sessionId
+            setSessionId(Date.now().toString());
+        }
+    }, [draftId, data]);
+
     // Helper: count total word count in output
     const getOutputWordCount = (outputData) => {
         if (!outputData) return 0;

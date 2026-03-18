@@ -28,7 +28,12 @@ const ShareActions = ({ sessionId, textToShare, analysisResult, isPro, onPaywall
         if (!sessionId) return;
         setIsPublishing(true);
         try {
-            const response = await axios.post(`/api/publish/${sessionId}`);
+            const response = await axios.post(`/api/publish/${sessionId}`, {
+                content: analysisResult,
+                language: t?.code || 'EN',
+                timestamp: new Date().toISOString(),
+                industry: analysisResult?.industry
+            });
             const { publicUrl } = response.data;
             const fullUrl = `${window.location.origin}${publicUrl}`;
 
