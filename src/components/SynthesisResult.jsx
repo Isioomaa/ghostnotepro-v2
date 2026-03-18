@@ -162,6 +162,8 @@ const SynthesisResult = ({ text, analysis, languageName, currentLang, t, onReset
     const [showExportConfirm, setShowExportConfirm] = useState(false);
     const [showUndoBar, setShowUndoBar] = useState(false);
     const [lastArchiveId, setLastArchiveId] = useState(null);
+    const [isEditingDomain, setIsEditingDomain] = useState(false);
+    const [localIndustry, setLocalIndustry] = useState(industry || "General Business");
 
     // Staged Loading Experience (Section 6)
     const [synthesisStep, setSynthesisStep] = useState(0);
@@ -250,6 +252,10 @@ const SynthesisResult = ({ text, analysis, languageName, currentLang, t, onReset
         }
     }, [data, industry]);
 
+    useEffect(() => {
+        if (industry) setLocalIndustry(industry);
+    }, [industry]);
+
     // Helper: count total word count in output
     const getOutputWordCount = (outputData) => {
         if (!outputData) return 0;
@@ -299,9 +305,9 @@ const SynthesisResult = ({ text, analysis, languageName, currentLang, t, onReset
         });
         try {
             console.log('🚀 Starting generation. isPro:', isPro);
-            console.log('--- Industry Context:', industry);
+            console.log('--- Industry Context:', localIndustry);
 
-            const scribePromise = generateExecutiveSuite(editableText, analysis, languageName, 'scribe', isPro, industry, analysis?.emphasis_signals, selectedExecutiveState, structureMode);
+            const scribePromise = generateExecutiveSuite(editableText, analysis, languageName, 'scribe', isPro, localIndustry, analysis?.emphasis_signals, selectedExecutiveState, structureMode);
 
             if (isPro) {
                 console.log('💎 Pro user detected. Triggering Strategist...');
@@ -310,7 +316,7 @@ const SynthesisResult = ({ text, analysis, languageName, currentLang, t, onReset
             }
 
             const strategistPromise = isPro
-                ? generateExecutiveSuite(editableText, analysis, languageName, 'strategist', isPro, industry, analysis?.emphasis_signals, selectedExecutiveState, structureMode)
+                ? generateExecutiveSuite(editableText, analysis, languageName, 'strategist', isPro, localIndustry, analysis?.emphasis_signals, selectedExecutiveState, structureMode)
                 : Promise.resolve({});
 
             const results = await Promise.allSettled([scribePromise, strategistPromise]);
@@ -363,7 +369,7 @@ const SynthesisResult = ({ text, analysis, languageName, currentLang, t, onReset
                     transcript: editableText,
                     content: combinedResult,
                     analysis: analysis,
-                    industry: industry,
+                    industry: localIndustry,
                     tag: "✨ Transmuted",
                     created_at: new Date().toISOString(),
                     last_updated: new Date().toISOString()
@@ -566,14 +572,49 @@ const SynthesisResult = ({ text, analysis, languageName, currentLang, t, onReset
                     <div className="flex justify-between items-center mb-4">
                         <div className="flex flex-col items-start">
                             <p className="text-[#999] text-[10px] uppercase tracking-[0.3em]">{localT.scribe?.transcription || "TRANSCRIPTION"}</p>
-                            {industry && (
+                            {localIndustry && (
                                 <div className="flex flex-col items-start mt-2">
-                                    <span className="text-tactical-amber text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 bg-tactical-amber/10 border border-tactical-amber/30 rounded-full">
-                                        {localT.strategist.specializing_in} {industry}
+                                    <span 
+                                        onClick={() => setIsEditingDomain(true)}
+                                        className="text-tactical-amber text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 bg-tactical-amber/10 border border-tactical-amber/30 rounded-full cursor-pointer hover:bg-tactical-amber/20 transition-all"
+                                    >
+                                        {localT.strategist.specializing_in} {localIndustry}
                                     </span>
-                                    <span className="text-[10px] text-gray-500 italic mt-1.5 max-w-[200px] leading-snug">
-                                        AI is framing your output through a {industry.toLowerCase()} lens — change to adjust.
-                                    </span>
+                                    {isEditingDomain ? (
+                                        <div className="flex items-center space-x-2 mt-2">
+                                            <input 
+                                                autoFocus
+                                                type="text"
+                                                className="bg-black/40 border border-tactical-amber/40 rounded px-2 py-1 text-[10px] text-white outline-none focus:border-tactical-amber w-32"
+                                                value={localIndustry}
+                                                onChange={(e) => setLocalIndustry(e.target.value.slice(0, 60))}
+                                                onKeyDown={(e) => {
+                                                    if (e.key === 'Enter') {
+                                                        setIsEditingDomain(false);
+                                                        handleGenerate();
+                                                    }
+                                                    if (e.key === 'Escape') {
+                                                        setIsEditingDomain(false);
+                                                        setLocalIndustry(industry || "General Business");
+                                                    }
+                                                }}
+                                                onBlur={() => setIsEditingDomain(false)}
+                                            />
+                                            <button 
+                                                onClick={() => { setIsEditingDomain(false); handleGenerate(); }}
+                                                className="text-[10px] text-tactical-amber hover:text-white"
+                                            >
+                                                ✔
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <button 
+                                            onClick={() => setIsEditingDomain(true)}
+                                            className="text-[10px] text-gray-500 italic mt-1.5 max-w-[200px] leading-snug hover:text-gray-300 transition-colors text-left"
+                                        >
+                                            AI is framing your output through a {localIndustry.toLowerCase()} lens — change to adjust.
+                                        </button>
+                                    )}
                                 </div>
                             )}
                         </div>
@@ -648,7 +689,7 @@ const SynthesisResult = ({ text, analysis, languageName, currentLang, t, onReset
                                 <div className="flex flex-col items-center justify-center relative">
                                     {isEditingExecutiveState ? (
                                         <div className="flex space-x-2 mt-1 z-10">
-                                            {['Reflective', 'Analytical', 'Decisive'].map(state => (
+                                            {['Strategic', 'Analytical', 'Reflective', 'Decisive'].map(state => (
                                                 <button
                                                     key={state}
                                                     onClick={() => {

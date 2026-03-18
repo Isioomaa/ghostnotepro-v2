@@ -8,9 +8,8 @@ import { trackEvent, GA_EVENTS } from '../utils/analytics';
 
 export const RAW_DRAFT_PLACEHOLDER = "Audio recording saved as draft. Transmute to see insights.";
 
-const PLATFORMS = [
-    { id: 'twitter', name: 'X' },
-    { id: 'linkedin', name: 'LinkedIn' },
+const DOMAIN_CHIPS = [
+    'General Business', 'Healthcare', 'Real Estate', 'Finance', 'Technology', 'Consulting'
 ];
 
 const AudioRecorder = ({ onUploadSuccess, t, languageName, isPro, initialAudio }) => {
@@ -19,7 +18,7 @@ const AudioRecorder = ({ onUploadSuccess, t, languageName, isPro, initialAudio }
     const [file, setFile] = useState(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
-    const [selectedPlatforms, setSelectedPlatforms] = useState(['twitter', 'linkedin']);
+    const [domainInput, setDomainInput] = useState("");
     const [mode, setMode] = useState('record');
     const [isRecording, setIsRecording] = useState(false);
     const [recordingTime, setRecordingTime] = useState(0);
@@ -117,6 +116,27 @@ const AudioRecorder = ({ onUploadSuccess, t, languageName, isPro, initialAudio }
             }
         }
     }, [initialAudio]);
+
+    // Session memory for domain (daily reset)
+    useEffect(() => {
+        const savedData = localStorage.getItem('ghostnote_last_domain');
+        if (savedData) {
+            try {
+                const { domain, date } = JSON.parse(savedData);
+                const today = new Date().toDateString();
+                if (date === today) {
+                    setDomainInput(domain);
+                }
+            } catch (err) {
+                console.error("Failed to parse saved domain:", err);
+            }
+        }
+    }, []);
+
+    const saveDomainToMemory = (domain) => {
+        const today = new Date().toDateString();
+        localStorage.setItem('ghostnote_last_domain', JSON.stringify({ domain, date: today }));
+    };
 
     // Dramatic pause for transmute button
     useEffect(() => {
@@ -343,19 +363,19 @@ const AudioRecorder = ({ onUploadSuccess, t, languageName, isPro, initialAudio }
         return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
     };
 
-    const handleUpload = async () => {
+    const handleUpload = async (force = false) => {
         if (hasReachedLimit() && !isProActive) {
             setShowPaywall(true);
             return;
         }
 
         const audioData = audioBlob || file;
-        if (!audioData || selectedPlatforms.length === 0) return;
+        if (!audioData) return;
 
         const audioDuration = recordingTime || (fileDuration ? Math.round(fileDuration) : 0);
         
         // Feature 1: Short Recording Intercept (< 20 seconds)
-        if (audioDuration > 0 && audioDuration < 20 && !shortInterceptAccepted) {
+        if (audioDuration > 0 && audioDuration < 20 && !shortInterceptAccepted && !force) {
             setShowShortIntercept(true);
             return;
         }
@@ -367,7 +387,13 @@ const AudioRecorder = ({ onUploadSuccess, t, languageName, isPro, initialAudio }
         });
 
         try {
-            const response = await transmuteAudio(audioData, languageName);
+            const finalDomain = domainInput.trim() || "General Business";
+            saveDomainToMemory(finalDomain);
+            const response = await transmuteAudio(audioData, languageName, finalDomain);
+
+            if (response.status === 'error') {
+                throw new Error(response.message || "The transmutation was interrupted. Let's try that again.");
+            }
 
             let textValue = "";
             let analysisData = null;
@@ -436,9 +462,10 @@ const AudioRecorder = ({ onUploadSuccess, t, languageName, isPro, initialAudio }
             }
 
             if (onUploadSuccess) {
-                onUploadSuccess(textValue, selectedPlatforms, analysisData);
+                onUploadSuccess(textValue, [], analysisData);
                 trackEvent(GA_EVENTS.TRANSMUTATION_COMPLETE, {
-                    has_analysis: !!analysisData
+                    has_analysis: !!analysisData,
+                    domain: domainInput || "General Business"
                 });
             }
         } catch (err) {
@@ -499,16 +526,27 @@ const AudioRecorder = ({ onUploadSuccess, t, languageName, isPro, initialAudio }
 
     return (
         <div className="space-y-12">
-            <div className="flex justify-center space-x-8">
-                {PLATFORMS.map(platform => (
-                    <button
-                        key={platform.id}
-                        onClick={() => togglePlatform(platform.id)}
-                        className={`platform-tag ${selectedPlatforms.includes(platform.id) ? 'active' : ''}`}
-                    >
-                        {platform.name}
-                    </button>
-                ))}
+            {/* Domain Selector replaced with free-text input (Fix 1) */}
+            <div className="w-full max-w-sm mx-auto space-y-4 px-6">
+                <input
+                    type="text"
+                    className="w-full bg-transparent border-b border-[#A88E65]/30 focus:border-[#A88E65] text-[#F9F7F5] pb-2 outline-none text-center text-sm font-light tracking-wide transition-all translate-y-2"
+                    placeholder="What industry or context should the AI think in?"
+                    value={domainInput}
+                    onChange={(e) => setDomainInput(e.target.value.slice(0, 60))}
+                    maxLength={60}
+                />
+                <div className="flex flex-wrap justify-center gap-x-3 gap-y-2 opacity-60 hover:opacity-100 transition-opacity">
+                    {DOMAIN_CHIPS.map(chip => (
+                        <button
+                            key={chip}
+                            onClick={() => setDomainInput(chip)}
+                            className="text-[9px] px-3 py-1 rounded-full border border-gray-800 text-gray-500 hover:border-[#A88E65] hover:text-[#A88E65] transition-all uppercase tracking-tighter"
+                        >
+                            {chip}
+                        </button>
+                    ))}
+                </div>
             </div>
 
             <div className="flex flex-col items-center space-y-3">
@@ -548,7 +586,7 @@ const AudioRecorder = ({ onUploadSuccess, t, languageName, isPro, initialAudio }
                             <button
                                 onClick={() => {
                                     setShortInterceptAccepted(true);
-                                    setTimeout(() => handleUpload(), 0);
+                                    handleUpload(true);
                                 }}
                                 className="px-8 py-3 border border-[#A88E65] text-[#A88E65] rounded text-[10px] font-bold uppercase tracking-widest hover:bg-[#A88E65] hover:text-black transition-all"
                             >
@@ -713,8 +751,8 @@ const AudioRecorder = ({ onUploadSuccess, t, languageName, isPro, initialAudio }
                 <div className={`flex flex-col items-center pt-8 space-y-4 transition-all duration-700 ${showTransmuteButton ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
                     }`}>
                     <motion.button
-                        onClick={handleUpload}
-                        disabled={loading || selectedPlatforms.length === 0}
+                        onClick={() => handleUpload()}
+                        disabled={loading}
                         className="btn-transmute flex items-center space-x-2"
                         whileTap={{ scale: 0.96 }}
                     >

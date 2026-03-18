@@ -1,4 +1,4 @@
-from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi import FastAPI, UploadFile, File, HTTPException, Form
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from anthropic import Anthropic
@@ -123,7 +123,7 @@ async def generate_title_handler(request: TitleRequest):
 
 # --- STEP 1: THE SCRIBE (Audio -> Core Thesis) ---
 @app.post("/api/transmute")
-async def transmute_handler(file: UploadFile = File(...)):
+async def transmute_handler(file: UploadFile = File(...), domain: str = Form("General Business")):
     try:
         logger.info(f"Scribe receiving audio: {file.filename}")
         
@@ -160,7 +160,7 @@ async def transmute_handler(file: UploadFile = File(...)):
         logger.info(f"Whisper transcription complete. Language: {detected_language}, Length: {len(raw_transcription)} chars")
         
         # 3. ANALYZE with Claude (executive state + translation if needed)
-        analysis_prompt = f"""You are an elite Chief of Staff. Analyze this transcription.
+        analysis_prompt = f"""You are an elite Chief of Staff. You are analyzing this from a {domain} perspective. Analyze this transcription.
 
 Transcription: \"\"\"
 {raw_transcription}
@@ -200,7 +200,7 @@ Zero chatter. Zero markdown. Pure JSON."""
         corrected_transcription = apply_glossary_corrections(transcription, industry)
         
         parsed_response["transcription"] = corrected_transcription
-        parsed_response["industry"] = industry
+        parsed_response["industry"] = domain
         
         return {"status": "success", "data": parsed_response}
 
@@ -262,17 +262,7 @@ async def generate_post_handler(request: GenerateRequest):
         if request.mode == "strategist" and not request.isPro:
             raise HTTPException(status_code=403, detail="Strategist mode requires a Pro subscription.")
 
-        industry_context = ""
-        if request.industry and request.industry != "General Business":
-            glossary = INDUSTRY_GLOSSARIES.get(request.industry, {})
-            glossary_str = "\n".join([f"- {k}: {v}" for k, v in glossary.items()])
-            industry_context = f"""
-            You are specializing in the {request.industry} industry. 
-            Common terminology and context for this industry:
-            {glossary_str}
-            
-            When analyzing the transcription, interpret technical terms and abbreviations through the lens of the {request.industry} sector.
-            """
+        industry_context = f"You are analyzing this from a {request.industry or 'General Business'} perspective."
 
         emphasis_context = ""
         if request.emphasis_signals:

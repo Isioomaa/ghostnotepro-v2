@@ -30,10 +30,11 @@ const cleanAndParseJSON = (text) => {
     }
 };
 
-export const transmuteAudio = async (audioBlob, language) => {
+export const transmuteAudio = async (audioBlob, language, domain) => {
     const formData = new FormData();
     formData.append('file', audioBlob, 'recording.webm');
     if (language) formData.append('language', language);
+    if (domain) formData.append('domain', domain);
 
     try {
         const response = await axios.post(`${API_BASE_URL}/transmute`, formData, {
