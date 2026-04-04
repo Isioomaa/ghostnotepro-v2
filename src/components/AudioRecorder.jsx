@@ -9,7 +9,7 @@ import { trackEvent, GA_EVENTS } from '../utils/analytics';
 export const RAW_DRAFT_PLACEHOLDER = "Audio recording saved as draft. Transmute to see insights.";
 
 const DOMAIN_CHIPS = [
-    'General Business', 'Healthcare', 'Real Estate', 'Finance', 'Technology', 'Consulting'
+    'general_business', 'healthcare', 'real_estate', 'finance', 'technology', 'consulting'
 ];
 
 const AudioRecorder = ({ onUploadSuccess, t, languageName, isPro, initialAudio }) => {
@@ -52,9 +52,9 @@ const AudioRecorder = ({ onUploadSuccess, t, languageName, isPro, initialAudio }
 
     // 3-stage loading messages (Improvement 4)
     const STAGED_STEPS = [
-        "Analyzing semantic structure...",
-        "Applying domain mental models...",
-        "Synthesizing executive output..."
+        t.messages?.stage_listening || "Listening to your note...",
+        t.messages?.stage_extracting || "Extracting your strategy...",
+        t.messages?.stage_preparing || "Preparing your document..."
     ];
 
     // Staged loading: cycle through 3 stages
@@ -103,7 +103,7 @@ const AudioRecorder = ({ onUploadSuccess, t, languageName, isPro, initialAudio }
                     })
                     .catch(err => {
                         console.error("Failed to restore audio from draft:", err);
-                        setError("Could not restore the audio from this draft.");
+                        setError(t.messages?.draft_restore_fail || "Could not restore the audio from this draft.");
                     });
             } else if (initialAudio instanceof File || initialAudio instanceof Blob) {
                 if (initialAudio instanceof File) {
@@ -237,7 +237,7 @@ const AudioRecorder = ({ onUploadSuccess, t, languageName, isPro, initialAudio }
 
     const validateFile = (file) => {
         if (file.size > MAX_FILE_SIZE) {
-            setError(`File too large. Maximum size is 25MB. Your file is ${formatFileSize(file.size)}.`);
+            setError(`${t.messages?.file_too_large || "File too large. Maximum size is 25MB."} ${formatFileSize(file.size)}`);
             return false;
         }
         const fileExtension = file.name.toLowerCase().split('.').pop();
@@ -245,7 +245,7 @@ const AudioRecorder = ({ onUploadSuccess, t, languageName, isPro, initialAudio }
         const isValidType = ACCEPTED_FORMATS.some(format => file.type.includes(format.split('/')[1])) ||
             validExtensions.includes(fileExtension);
         if (!isValidType) {
-            setError(`Accepted formats: MP3, WAV, M4A, WebM, OGG`);
+            setError(t.messages?.accepted_formats || "Accepted formats: MP3, WAV, M4A, WebM, OGG");
             return false;
         }
         return true;
@@ -410,9 +410,9 @@ const AudioRecorder = ({ onUploadSuccess, t, languageName, isPro, initialAudio }
 
                 const emphasisSignals = extractHighEmphasisSignals(textValue);
 
-                let intensity = "Medium";
-                if (wpm < 100) intensity = "Low";
-                if (wpm > 150) intensity = "High";
+                let intensity = t.status?.medium || "Medium";
+                if (wpm < 100) intensity = t.status?.low || "Low";
+                if (wpm > 150) intensity = t.status?.high || "High";
 
                 const mins = Math.floor(durationSeconds / 60);
                 const secs = durationSeconds % 60;
@@ -424,10 +424,10 @@ const AudioRecorder = ({ onUploadSuccess, t, languageName, isPro, initialAudio }
                         duration_seconds: durationSeconds,
                         wpm: wpm,
                         intensity: intensity,
-                        executive_state: executive_state || "Reflective",
+                        executive_state: executive_state || t.status?.reflective || "Reflective",
                         emphasis_signals: emphasisSignals
                     },
-                    industry: industry || "General Business"
+                    industry: industry || t.labels?.domain_general_business || "General Business"
                 };
 
                 if (core_thesis || strategic_pillars || tactical_steps) {
@@ -531,19 +531,19 @@ const AudioRecorder = ({ onUploadSuccess, t, languageName, isPro, initialAudio }
                 <input
                     type="text"
                     className="w-full bg-transparent border-b border-[#A88E65]/30 focus:border-[#A88E65] text-[#F9F7F5] pb-2 outline-none text-center text-sm font-light tracking-wide transition-all translate-y-2"
-                    placeholder="What industry or context should the AI think in?"
+                    placeholder={t.messages?.domain_placeholder || "What industry or context should the AI think in?"}
                     value={domainInput}
                     onChange={(e) => setDomainInput(e.target.value.slice(0, 60))}
                     maxLength={60}
                 />
                 <div className="flex flex-wrap justify-center gap-x-3 gap-y-2 opacity-60 hover:opacity-100 transition-opacity">
-                    {DOMAIN_CHIPS.map(chip => (
+                    {DOMAIN_CHIPS.map(chipKey => (
                         <button
-                            key={chip}
-                            onClick={() => setDomainInput(chip)}
+                            key={chipKey}
+                            onClick={() => setDomainInput(t.labels?.[`domain_${chipKey}`] || chipKey)}
                             className="text-[9px] px-3 py-1 rounded-full border border-gray-800 text-gray-500 hover:border-[#A88E65] hover:text-[#A88E65] transition-all uppercase tracking-tighter"
                         >
-                            {chip}
+                            {t.labels?.[`domain_${chipKey}`] || chipKey}
                         </button>
                     ))}
                 </div>
@@ -580,9 +580,9 @@ const AudioRecorder = ({ onUploadSuccess, t, languageName, isPro, initialAudio }
                 {showShortIntercept ? (
                     <div className="flex flex-col items-center text-center space-y-8 animate-in fade-in duration-500 max-w-md mx-auto py-12">
                         <p className="text-white text-lg font-light tracking-wide">
-                            Short recordings may produce limited output — continue or re-record.
+                            {t.messages?.short_recording_intercept || "Short recordings may produce limited output — continue or re-record."}
                         </p>
-                        <div className="flex space-x-4">
+                                <div className="flex space-x-4">
                             <button
                                 onClick={() => {
                                     setShortInterceptAccepted(true);
@@ -590,7 +590,7 @@ const AudioRecorder = ({ onUploadSuccess, t, languageName, isPro, initialAudio }
                                 }}
                                 className="px-8 py-3 border border-[#A88E65] text-[#A88E65] rounded text-[10px] font-bold uppercase tracking-widest hover:bg-[#A88E65] hover:text-black transition-all"
                             >
-                                Continue
+                                {t.buttons?.continue_btn || "Continue"}
                             </button>
                             <button
                                 onClick={() => {
@@ -598,7 +598,7 @@ const AudioRecorder = ({ onUploadSuccess, t, languageName, isPro, initialAudio }
                                 }}
                                 className="px-8 py-3 border border-gray-600 text-gray-400 rounded text-[10px] font-bold uppercase tracking-widest hover:text-white hover:border-gray-400 transition-all"
                             >
-                                Re-record
+                                {t.buttons?.rerecord_btn || "Re-record"}
                             </button>
                         </div>
                     </div>
@@ -778,7 +778,7 @@ const AudioRecorder = ({ onUploadSuccess, t, languageName, isPro, initialAudio }
                                     const newDraft = {
                                         id: Date.now(),
                                         title: file ? file.name : t.labels.untitled_note,
-                                        transcript: RAW_DRAFT_PLACEHOLDER,
+                                        transcript: t.messages?.draft_placeholder || RAW_DRAFT_PLACEHOLDER,
                                         tag: t.labels.brain_dump,
                                         created_at: new Date().toISOString(),
                                         audioData: audioBase64
@@ -794,7 +794,7 @@ const AudioRecorder = ({ onUploadSuccess, t, languageName, isPro, initialAudio }
                                     alert(t.messages.draft_saved);
                                 } catch (err) {
                                     console.error(err);
-                                    setError('Draft could not be saved at this time.');
+                                    setError(t.messages?.draft_save_fail || 'Draft could not be saved at this time.');
                                 } finally {
                                     setSavingDraft(false);
                                 }
@@ -806,7 +806,7 @@ const AudioRecorder = ({ onUploadSuccess, t, languageName, isPro, initialAudio }
                         whileTap={{ scale: 0.96 }}
                     >
                         <span>💭</span>
-                        <span>{savingDraft ? 'Saving...' : t.buttons.save_draft}</span>
+                        <span>{savingDraft ? (t.messages?.saving || 'Saving...') : t.buttons.save_draft}</span>
                     </motion.button>
 
                     <p className="text-[#666] text-xs italic">

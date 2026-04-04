@@ -51,7 +51,7 @@ const TransparencyLabel = ({ type, t }) => {
         icon = <span className="mr-1">⚠️</span>;
     } else {
         label = t?.messages?.strategic_implication || "Interpreted as strategic implication";
-        tooltip = "Contextual inference applied.";
+        tooltip = t?.messages?.interpretation_tooltip || "Contextual inference applied.";
         styling = "text-[10px] italic text-gray-400 font-light tracking-wide ml-2 border-b border-dashed border-gray-500";
     }
 
@@ -74,7 +74,7 @@ const TransparencyLabel = ({ type, t }) => {
     );
 };
 // Section-Level Flag Mechanism Component (Feature 2)
-const FlagButton = ({ sectionName, outputType }) => {
+const FlagButton = ({ sectionName, outputType, t }) => {
     const [isFlagged, setIsFlagged] = useState(false);
 
     const handleFlag = (e) => {
@@ -105,7 +105,7 @@ const FlagButton = ({ sectionName, outputType }) => {
         >
             {isFlagged && (
                 <span className="text-[9px] text-gray-500 italic animate-in fade-in duration-300 whitespace-nowrap">
-                    Noted. This helps us improve.
+                    {t?.messages?.flag_confirmation || "Noted. This helps us improve."}
                 </span>
             )}
             <svg 
@@ -162,16 +162,16 @@ const SynthesisResult = ({ text, analysis, languageName, currentLang, t, onReset
     const [showUndoBar, setShowUndoBar] = useState(false);
     const [lastArchiveId, setLastArchiveId] = useState(null);
     const [isEditingDomain, setIsEditingDomain] = useState(false);
-    const [localIndustry, setLocalIndustry] = useState(industry || "General Business");
+    const [localIndustry, setLocalIndustry] = useState(industry || t?.labels?.domain_general_business || "General Business");
 
     // Staged Loading Experience (Section 6)
     const [synthesisStep, setSynthesisStep] = useState(0);
     const [loadingStartTime, setLoadingStartTime] = useState(null);
     const [showDelayedMessage, setShowDelayedMessage] = useState(false);
     const STAGED_STEPS = [
-        "Analyzing semantic structure...",
-        "Applying domain mental models...",
-        "Synthesizing executive output..."
+        t?.messages?.stage_listening || "Listening to your note...",
+        t?.messages?.stage_extracting || "Extracting your strategy...",
+        t?.messages?.stage_preparing || "Preparing your document..."
     ];
 
     useEffect(() => {
@@ -200,7 +200,7 @@ const SynthesisResult = ({ text, analysis, languageName, currentLang, t, onReset
 
     useEffect(() => {
         if (analysis && analysis.executive_state && !selectedExecutiveState && !isExecutiveStateOverridden) {
-            setSelectedExecutiveState(analysis.executive_state || analysis.tone || "Reflective");
+            setSelectedExecutiveState(analysis.executive_state || analysis.tone || t?.status?.reflective || "Reflective");
         }
         
         // Quality check logic
@@ -506,7 +506,7 @@ const SynthesisResult = ({ text, analysis, languageName, currentLang, t, onReset
             localStorage.setItem('ghostnote_archive', JSON.stringify(filtered));
             setShowUndoBar(false);
             setLastArchiveId(null);
-            onShowToast("Archive undone.");
+            onShowToast(localT.messages?.archive_undone || "Archive undone.");
         } catch (err) {
             console.error('Undo failed', err);
         }
@@ -577,7 +577,7 @@ const SynthesisResult = ({ text, analysis, languageName, currentLang, t, onReset
                                         onClick={() => setIsEditingDomain(true)}
                                         className="text-tactical-amber text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 bg-tactical-amber/10 border border-tactical-amber/30 rounded-full cursor-pointer hover:bg-tactical-amber/20 transition-all"
                                     >
-                                        {localT.strategist.specializing_in} {localIndustry}
+                                        {(localT.strategist?.specializing_in || "Specializing in") + " " + localIndustry}
                                     </span>
                                     {isEditingDomain ? (
                                         <div className="flex items-center space-x-2 mt-2">
@@ -594,7 +594,7 @@ const SynthesisResult = ({ text, analysis, languageName, currentLang, t, onReset
                                                     }
                                                     if (e.key === 'Escape') {
                                                         setIsEditingDomain(false);
-                                                        setLocalIndustry(industry || "General Business");
+                                                        setLocalIndustry(industry || localT?.labels?.domain_general_business || "General Business");
                                                     }
                                                 }}
                                                 onBlur={() => setIsEditingDomain(false)}
@@ -611,7 +611,7 @@ const SynthesisResult = ({ text, analysis, languageName, currentLang, t, onReset
                                             onClick={() => setIsEditingDomain(true)}
                                             className="text-[10px] text-gray-500 italic mt-1.5 max-w-[200px] leading-snug hover:text-gray-300 transition-colors text-left"
                                         >
-                                            AI is framing your output through a {localIndustry.toLowerCase()} lens — change to adjust.
+                                            {(localT.messages?.domain_signal || "AI is framing your output through a {domain} lens — change to adjust.").replace('{domain}', localIndustry.toLowerCase())}
                                         </button>
                                     )}
                                 </div>
@@ -633,7 +633,7 @@ const SynthesisResult = ({ text, analysis, languageName, currentLang, t, onReset
                                 value={editableText}
                                 onChange={(e) => setEditableText(e.target.value)}
                                 className="w-full h-48 bg-white/5 border border-tactical-amber/30 rounded-lg p-6 text-white text-sm md:text-base font-serif italic focus:border-tactical-amber outline-none transition-all resize-none shadow-inner"
-                                placeholder="Edit your raw thought..."
+                                placeholder={localT.messages?.edit_placeholder || "Edit your raw thought..."}
                             />
                             <div className="flex space-x-4">
                                 <button
@@ -722,9 +722,9 @@ const SynthesisResult = ({ text, analysis, languageName, currentLang, t, onReset
                                         </div>
                                     )}
                                     {isExecutiveStateOverridden && !isEditingExecutiveState && (
-                                        <p className="text-[9px] italic text-gray-500 mt-1">Adjusted before generation</p>
+                                        <p className="text-[9px] italic text-gray-500 mt-1">{localT.messages?.adjusted_before_generation || "Adjusted before generation"}</p>
                                     )}
-                                    <p className="text-[10px] italic text-gray-500 mt-2">This shapes the tone of your document.</p>
+                                    <p className="text-[10px] italic text-gray-500 mt-2">{localT.messages?.executive_state_hint || "This shapes the tone of your document."}</p>
                                 </div>
                             </div>
                         </div>
@@ -763,7 +763,7 @@ const SynthesisResult = ({ text, analysis, languageName, currentLang, t, onReset
                                 }}
                                 className={`text-[11px] uppercase tracking-widest font-bold pb-2 relative transition-colors ${structureMode === 'Brief' ? 'text-gold-600' : 'text-gray-500 hover:text-gray-300'}`}
                             >
-                                Brief
+                                {localT.messages?.structure_brief || "Brief"}
                                 {structureMode === 'Brief' && (
                                     <span className="absolute bottom-[-2px] left-0 w-full h-[2px] bg-gold-600"></span>
                                 )}
@@ -775,14 +775,14 @@ const SynthesisResult = ({ text, analysis, languageName, currentLang, t, onReset
                                 }}
                                 className={`text-[11px] uppercase tracking-widest font-bold pb-2 relative transition-colors ${structureMode === 'Detailed' ? 'text-gold-600' : 'text-gray-500 hover:text-gray-300'}`}
                             >
-                                Detailed
+                                {localT.messages?.structure_detailed || "Detailed"}
                                 {structureMode === 'Detailed' && (
                                     <span className="absolute bottom-[-2px] left-0 w-full h-[2px] bg-gold-600"></span>
                                 )}
                             </button>
                         </div>
                         <p className="text-center text-[10px] italic text-gray-500 mt-3 px-4">
-                            Controls how deeply the AI develops your strategy — not just length.
+                            {localT.messages?.structure_hint || "Controls how deeply the AI develops your strategy — not just length."}
                         </p>
                     </div>
                 )}
@@ -833,7 +833,7 @@ const SynthesisResult = ({ text, analysis, languageName, currentLang, t, onReset
                         <div className="flex flex-col items-center">
                             {showQualityWarning && (
                                 <p className="text-[#A88E65] text-[10px] italic mb-4 max-w-sm text-center">
-                                    Some parts of your recording may not have transcribed clearly — review before generating.
+                                    {localT.messages?.quality_warning || "Some parts of your recording may not have transcribed clearly — review before generating."}
                                 </p>
                             )}
                             <motion.button
@@ -896,7 +896,7 @@ const SynthesisResult = ({ text, analysis, languageName, currentLang, t, onReset
                         >
                             <div className="flex justify-between items-start mb-4 md:mb-6">
                                 <h4 className="font-sans font-bold uppercase tracking-widest text-sm md:text-xs text-gold-600">{localT.scribe?.core_thesis || "CORE THESIS"}</h4>
-                                <FlagButton sectionName="Core Thesis" outputType="Scribe" />
+                                <FlagButton sectionName="Core Thesis" outputType="Scribe" t={localT} />
                             </div>
                             {isEditingOutput ? (
                                 <div
@@ -926,7 +926,7 @@ const SynthesisResult = ({ text, analysis, languageName, currentLang, t, onReset
                                 {freeData.strategic_pillars.map((pillar, idx) => (
                                     <div key={idx} className="border-l-2 border-gold-600/20 pl-6 md:pl-8 py-2 relative">
                                         <div className="absolute top-2 right-0">
-                                            <FlagButton sectionName={`Strategic Pillar: ${pillar.title}`} outputType="Scribe" />
+                                            <FlagButton sectionName={`Strategic Pillar: ${pillar.title}`} outputType="Scribe" t={localT} />
                                         </div>
                                         {isEditingOutput ? (
                                             <>
@@ -995,7 +995,7 @@ const SynthesisResult = ({ text, analysis, languageName, currentLang, t, onReset
                                             <span className="flex-1 pt-0.5 font-serif text-base pr-8">{step}</span>
                                         )}
                                         <div className="absolute top-1 right-0">
-                                            <FlagButton sectionName={`Tactical Step ${idx + 1}`} outputType="Scribe" />
+                                            <FlagButton sectionName={`Tactical Step ${idx + 1}`} outputType="Scribe" t={localT} />
                                         </div>
                                     </li>
                                 ))}
@@ -1051,7 +1051,7 @@ const SynthesisResult = ({ text, analysis, languageName, currentLang, t, onReset
                                                     <TransparencyLabel type="implication" t={localT} />
                                                 </h4>
                                             </div>
-                                            <FlagButton sectionName="Executive Judgement" outputType="Strategist" />
+                                            <FlagButton sectionName="Executive Judgement" outputType="Strategist" t={localT} />
                                         </div>
                                         {isEditingOutput ? (
                                             <div
@@ -1082,7 +1082,7 @@ const SynthesisResult = ({ text, analysis, languageName, currentLang, t, onReset
                                                 <span className="pulse-dot"></span>
                                                 <h4 className="font-sans font-bold uppercase tracking-widest text-sm md:text-xs text-red-400">{localT.strategist?.risk_audit || "RISK AUDIT"}</h4>
                                             </div>
-                                            <FlagButton sectionName="Risk Audit" outputType="Strategist" />
+                                            <FlagButton sectionName="Risk Audit" outputType="Strategist" t={localT} />
                                         </div>
                                         {isEditingOutput ? (
                                             <div
@@ -1131,7 +1131,7 @@ const SynthesisResult = ({ text, analysis, languageName, currentLang, t, onReset
                                         >
                                             {(() => {
                                                 const rawEmail = proData.emailDraft || proData.email_draft;
-                                                let subject = "No Subject";
+                                                let subject = localT.messages?.no_subject || "No Subject";
                                                 let body = "";
 
                                                 if (typeof rawEmail === 'string') {
@@ -1154,20 +1154,20 @@ const SynthesisResult = ({ text, analysis, languageName, currentLang, t, onReset
                                                         <div className="flex flex-col md:flex-row justify-between items-start md:items-baseline mb-6 border-b border-white/5 pb-4 gap-4 md:gap-0">
                                                             <h5 className="font-sans font-bold text-white text-[10px] uppercase tracking-widest">{localT.strategist?.email_draft || "EMAIL DRAFT"}</h5>
                                                             <div className="flex space-x-4 w-full md:w-auto justify-between md:justify-end items-center">
-                                                                <FlagButton sectionName="Email Draft" outputType="Strategist" />
+                                                                <FlagButton sectionName="Email Draft" outputType="Strategist" t={localT} />
                                                                 <button
                                                                     onClick={() => copyToClipboard(body, localT.strategist?.email_draft || "Email")}
                                                                     className="text-xs md:text-[10px] text-tactical-amber hover:text-white uppercase tracking-widest"
                                                                 >
                                                                     {localT.buttons?.copy || "COPY"}
                                                                 </button>
-                                                                <button onClick={() => setShowEmail(false)} className="text-xs md:text-[10px] text-white/40 hover:text-white uppercase tracking-widest">Close</button>
+                                                                <button onClick={() => setShowEmail(false)} className="text-xs md:text-[10px] text-white/40 hover:text-white uppercase tracking-widest">{localT.buttons?.close || "Close"}</button>
                                                             </div>
                                                         </div>
                                                         <div className="space-y-4">
-                                                            <p className="text-[10px] uppercase tracking-widest text-white/40">Subject</p>
+                                                            <p className="text-[10px] uppercase tracking-widest text-white/40">{localT.labels?.subject || "Subject"}</p>
                                                             <p className="font-sans font-bold text-white text-base md:text-lg">{subject}</p>
-                                                            <p className="text-[10px] uppercase tracking-widest text-white/40 mt-6">Message Body</p>
+                                                            <p className="text-[10px] uppercase tracking-widest text-white/40 mt-6">{localT.labels?.message_body || "Message Body"}</p>
                                                             <div className="text-white/80 text-sm md:text-base leading-relaxed font-serif italic">{renderMarkdownBlock(body)}</div>
                                                         </div>
                                                     </>
@@ -1219,7 +1219,7 @@ const SynthesisResult = ({ text, analysis, languageName, currentLang, t, onReset
                                                             onClick={() => setWagerDays(days)}
                                                             className={`flex-1 py-3 text-[10px] font-bold rounded border ${wagerDays === days ? 'bg-tactical-amber text-black border-tactical-amber' : 'border-white/10 text-gray-400'}`}
                                                         >
-                                                            {days === 365 ? '1 Year' : `${days} Days`}
+                                                            {days === 365 ? (localT.labels?.one_year || '1 Year') : `${days} ${(localT.labels?.days || 'Days')}`}
                                                         </button>
                                                     ))}
                                                 </div>
@@ -1358,9 +1358,9 @@ const SynthesisResult = ({ text, analysis, languageName, currentLang, t, onReset
             {showRegenerationWarning && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm px-4">
                     <div className="bg-[#111] border border-white/10 p-6 md:p-8 rounded-xl max-w-md w-full text-center fade-in">
-                        <h3 className="text-white text-lg font-playfair font-bold mb-4">Regeneration Warning</h3>
+                        <h3 className="text-white text-lg font-playfair font-bold mb-4">{localT.messages?.regeneration_title || "Regeneration Warning"}</h3>
                         <p className="text-gray-400 text-sm mb-8 leading-relaxed">
-                            You have edited sections — regenerating will replace them. Continue?
+                            {localT.messages?.regeneration_warning || "You have edited sections — regenerating will replace them. Continue?"}
                         </p>
                         <div className="flex flex-col md:flex-row space-y-3 md:space-y-0 md:space-x-4">
                             <button
@@ -1370,13 +1370,13 @@ const SynthesisResult = ({ text, analysis, languageName, currentLang, t, onReset
                                 }}
                                 className="flex-1 py-3 border border-[#A88E65] text-[#A88E65] text-[10px] font-bold uppercase tracking-widest rounded-sm hover:bg-[#A88E65] hover:text-black transition-all shadow-[0_0_15px_rgba(168,142,101,0.2)]"
                             >
-                                Continue
+                                {localT.buttons?.continue_btn || "Continue"}
                             </button>
                             <button
                                 onClick={() => setShowRegenerationWarning(false)}
                                 className="flex-1 py-3 border border-gray-600 text-gray-400 text-[10px] font-bold uppercase tracking-widest rounded-sm hover:text-white hover:border-gray-500 transition-all"
                             >
-                                Cancel
+                                {localT.buttons?.cancel || "Cancel"}
                             </button>
                         </div>
                     </div>
@@ -1389,22 +1389,22 @@ const SynthesisResult = ({ text, analysis, languageName, currentLang, t, onReset
                         <div className="w-12 h-12 rounded-full border border-tactical-amber flex items-center justify-center mx-auto mb-6 bg-tactical-amber/5">
                             <span className="text-tactical-amber text-xl">🏛️</span>
                         </div>
-                        <h3 className="text-white text-lg font-playfair font-bold mb-4">Museum Mode</h3>
+                        <h3 className="text-white text-lg font-playfair font-bold mb-4">{localT.messages?.museum_title || "Museum Mode"}</h3>
                         <p className="text-gray-400 text-sm mb-8 leading-relaxed">
-                            You're about to share this document publicly. Anyone with the link can view it.
+                            {localT.messages?.public_share_confirm || "You're about to share this document publicly. Anyone with the link can view it."}
                         </p>
                         <div className="flex flex-col md:flex-row space-y-3 md:space-y-0 md:space-x-4">
                             <button
                                 onClick={performArchive}
                                 className="flex-1 py-3 border border-[#A88E65] text-[#A88E65] text-[10px] font-bold uppercase tracking-widest rounded-sm hover:bg-[#A88E65] hover:text-black transition-all shadow-[0_0_15px_rgba(168,142,101,0.2)]"
                             >
-                                Share
+                                {localT.buttons?.share || "Share"}
                             </button>
                             <button
                                 onClick={() => setShowArchiveConfirm(false)}
                                 className="flex-1 py-3 border border-gray-600 text-gray-400 text-[10px] font-bold uppercase tracking-widest rounded-sm hover:text-white hover:border-gray-500 transition-all"
                             >
-                                Cancel
+                                {localT.buttons?.cancel || "Cancel"}
                             </button>
                         </div>
                     </div>
@@ -1414,25 +1414,25 @@ const SynthesisResult = ({ text, analysis, languageName, currentLang, t, onReset
             {showExportConfirm && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm px-4">
                     <div className="bg-[#111] border border-white/10 p-6 md:p-8 rounded-xl max-w-md w-full text-center fade-in">
-                        <h3 className="text-white text-lg font-playfair font-bold mb-4">Export Document</h3>
+                        <h3 className="text-white text-lg font-playfair font-bold mb-4">{localT.messages?.export_title || "Export Document"}</h3>
                         <p className="text-gray-400 text-sm mb-4 leading-relaxed">
-                            Ready to export? Take a final look.
+                            {localT.messages?.export_ready || "Ready to export? Take a final look."}
                         </p>
                         <p className="text-[#A88E65] text-sm mb-8 leading-relaxed italic">
-                            Verify any statistics or figures before sharing.
+                            {localT.messages?.export_verify || "Verify any statistics or figures before sharing."}
                         </p>
                         <div className="flex flex-col md:flex-row space-y-3 md:space-y-0 md:space-x-4">
                             <button
                                 onClick={performExport}
                                 className="flex-1 py-3 border border-[#A88E65] text-[#A88E65] text-[10px] font-bold uppercase tracking-widest rounded-sm hover:bg-[#A88E65] hover:text-black transition-all shadow-[0_0_15px_rgba(168,142,101,0.2)]"
                             >
-                                Export
+                                {localT.buttons?.export || "Export"}
                             </button>
                             <button
                                 onClick={() => setShowExportConfirm(false)}
                                 className="flex-1 py-3 border border-gray-600 text-gray-400 text-[10px] font-bold uppercase tracking-widest rounded-sm hover:text-white hover:border-gray-500 transition-all"
                             >
-                                Cancel
+                                {localT.buttons?.cancel || "Cancel"}
                             </button>
                         </div>
                     </div>
@@ -1441,12 +1441,12 @@ const SynthesisResult = ({ text, analysis, languageName, currentLang, t, onReset
 
             {showUndoBar && (
                 <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[100] bg-[#1a1a1a] border border-[#A88E65]/30 shadow-2xl rounded-full px-6 py-4 flex items-center space-x-6 fade-in animate-in slide-in-from-bottom-5">
-                    <span className="text-gray-300 text-sm font-sans tracking-wide">Archived —</span>
+                    <span className="text-gray-300 text-sm font-sans tracking-wide">{localT.messages?.archived || "Archived —"}</span>
                     <button 
                         onClick={undoArchive}
                         className="text-tactical-amber text-xs font-bold uppercase tracking-widest hover:text-white transition-colors underline decoration-tactical-amber/50 underline-offset-4"
                     >
-                        Undo
+                        {localT.labels?.undo || "Undo"}
                     </button>
                 </div>
             )}
@@ -1503,7 +1503,7 @@ const SynthesisResult = ({ text, analysis, languageName, currentLang, t, onReset
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                         </svg>
-                        <span>EXPORT PDF</span>
+                        <span>{localT.labels?.export_pdf || "EXPORT PDF"}</span>
                     </motion.button>
                 </div>
             )}
