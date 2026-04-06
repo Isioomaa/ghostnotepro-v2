@@ -94,7 +94,5 @@ const ShareActions = ({ textToShare, analysisResult, isPro, onPaywallTrigger, on
         </div>
     );
 };
-    );
-};
 
 export default ShareActions;
